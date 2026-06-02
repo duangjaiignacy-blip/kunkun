@@ -32,6 +32,36 @@ xcodebuild -scheme KUNTranslator -configuration Release -destination 'platform=m
 Scripts/package-dmg.sh path/to/KUNTranslator.app KUNTranslator.dmg
 ```
 
+## Mac App Store 构建
+
+仓库保留两个发布形态：
+
+- `KUNTranslator`：直装 / DMG 版，使用本地签名和非沙盒 entitlements。
+- `KUNTranslator-AppStore`：Mac App Store 版，使用 `AppStore` 配置、App Sandbox、Privacy Manifest 和 App Store 审核资料模板。
+
+App Store 版必须使用 Apple Developer Program 账号在 Xcode 中签名。配置好 Team 后运行：
+
+```bash
+.tools/bin/xcodegen generate
+DEVELOPMENT_TEAM=你的TeamID Scripts/archive-appstore.sh
+```
+
+生成的 archive 位于：
+
+```bash
+build/AppStore/KUNTranslator.xcarchive
+```
+
+然后用 Xcode Organizer 上传到 App Store Connect。
+
+相关文件：
+
+- `KUNTranslator/KUNTranslator-AppStore.entitlements`
+- `KUNTranslator/Resources/PrivacyInfo.xcprivacy`
+- `AppStore/Metadata.md`
+- `AppStore/PrivacyPolicy.md`
+- `AppStore/ReviewNotes.md`
+
 ## 默认快捷键
 
 - 翻译选中文本：`Control + Option + T`

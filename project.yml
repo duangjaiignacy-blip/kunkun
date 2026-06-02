@@ -4,6 +4,10 @@ options:
   deploymentTarget:
     macOS: "14.4"
   xcodeVersion: "16.0"
+configs:
+  Debug: debug
+  Release: release
+  AppStore: release
 settings:
   base:
     SWIFT_VERSION: "5.0"
@@ -15,6 +19,11 @@ settings:
     CODE_SIGN_IDENTITY: "KUN Translator Local Signing"
     CODE_SIGN_INJECT_BASE_ENTITLEMENTS: "NO"
     ENABLE_DEBUG_DYLIB: "NO"
+  configs:
+    AppStore:
+      SWIFT_ACTIVE_COMPILATION_CONDITIONS: "APP_STORE"
+      CODE_SIGN_STYLE: Automatic
+      CODE_SIGN_IDENTITY: "Apple Distribution"
 targets:
   KUNTranslator:
     type: application
@@ -34,6 +43,10 @@ targets:
         CODE_SIGN_ENTITLEMENTS: KUNTranslator/KUNTranslator.entitlements
         CODE_SIGN_STYLE: Manual
         ENABLE_HARDENED_RUNTIME: YES
+      configs:
+        AppStore:
+          CODE_SIGN_ENTITLEMENTS: KUNTranslator/KUNTranslator-AppStore.entitlements
+          ENABLE_HARDENED_RUNTIME: YES
     dependencies:
       - sdk: Carbon.framework
       - sdk: Vision.framework
@@ -73,3 +86,10 @@ schemes:
     test:
       targets:
         - KUNTranslatorTests
+  KUNTranslator-AppStore:
+    build:
+      config: AppStore
+      targets:
+        KUNTranslator: all
+    archive:
+      config: AppStore

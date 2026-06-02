@@ -20,13 +20,17 @@
 	<string>0.1.0</string>
 	<key>CFBundleVersion</key>
 	<string>1</string>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
+	<key>LSApplicationCategoryType</key>
+	<string>public.app-category.productivity</string>
 	<key>LSMinimumSystemVersion</key>
 	<string>14.4</string>
 	<key>NSHumanReadableCopyright</key>
 	<string>Copyright © 2026 困困翻译助手。</string>
 	<key>NSScreenCaptureUsageDescription</key>
-	<string>困困翻译助手需要屏幕录制权限，用于截图 OCR 翻译。</string>
+	<string>困困翻译助手需要屏幕录制权限，用于识别用户框选区域中的文字并完成 OCR 翻译。</string>
 	<key>NSAppleEventsUsageDescription</key>
-	<string>当辅助功能无法直接读取选区时，困困翻译助手会发送复制命令来读取选中文本。</string>
+	<string>当辅助功能无法直接读取选区时，困困翻译助手会请求读取用户当前选中的文本以完成翻译。</string>
 </dict>
 </plist>

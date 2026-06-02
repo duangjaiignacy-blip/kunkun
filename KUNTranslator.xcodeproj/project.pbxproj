@@ -57,6 +57,7 @@
 		9C6F6978364F60CA9E8A1A37 /* HistoryRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 635162EBF2E2EBDF53E29220 /* HistoryRepository.swift */; };
 		9C7D31DC07775AAEF1FD6D59 /* OpenAIEnhancer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A02EBFD8BBCBE519E62F54B /* OpenAIEnhancer.swift */; };
 		9D9ED7FC9D5007B9FD257ED4 /* Vision.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 37B6D5234DFFD8CD94839806 /* Vision.framework */; };
+		9EDF432E67DF3A998596087B /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 228F38C742B8511FBE77705A /* PrivacyInfo.xcprivacy */; };
 		A2BD804778E6EEF2520AF59B /* libsqlite3.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 3E20C74A0F82789EE99B5568 /* libsqlite3.tbd */; };
 		B241FD8014FF19B570C60ED3 /* HistoryRepositoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 28C875F37F9488FCA0406B25 /* HistoryRepositoryTests.swift */; };
 		B949B38AFBD77B998890794A /* HistoryRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 635162EBF2E2EBDF53E29220 /* HistoryRepository.swift */; };
@@ -85,6 +86,7 @@
 		1AFEBDE4CE260BA5E24FD548 /* ScreenCaptureService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenCaptureService.swift; sourceTree = "<group>"; };
 		2183088D88FB5B4C43B5AB6F /* KeychainStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainStore.swift; sourceTree = "<group>"; };
 		22075C2C0C94EC491292089A /* KUNTranslatorTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = KUNTranslatorTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		228F38C742B8511FBE77705A /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		236DF87C70E5D6B2EC254D68 /* OverlayPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverlayPresenter.swift; sourceTree = "<group>"; };
 		252C11614C429406D85F53F7 /* PasteboardSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PasteboardSnapshot.swift; sourceTree = "<group>"; };
 		28C875F37F9488FCA0406B25 /* HistoryRepositoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryRepositoryTests.swift; sourceTree = "<group>"; };
@@ -198,6 +200,7 @@
 			isa = PBXGroup;
 			children = (
 				FED20A1A70251825DAC7F961 /* Assets.xcassets */,
+				228F38C742B8511FBE77705A /* PrivacyInfo.xcprivacy */,
 			);
 			name = Resources;
 			path = KUNTranslator/Resources;
@@ -471,6 +474,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				D75CE8AEF7114FF3554C088A /* Assets.xcassets in Resources */,
+				9EDF432E67DF3A998596087B /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -576,6 +580,18 @@
 			};
 			name = Debug;
 		};
+		4404D9AA5FA3C8206210D81E /* AppStore */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Manual;
+				GENERATE_INFOPLIST_FILE = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = com.kun.translator.tests;
+				PRODUCT_MODULE_NAME = KUNTranslatorTests;
+				PRODUCT_NAME = KUNTranslatorTests;
+			};
+			name = AppStore;
+		};
 		6BF1119AABEE6C58613384BD /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -589,6 +605,19 @@
 			};
 			name = Release;
 		};
+		8E4D9A620A7FB3A7E68F65C8 /* AppStore */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = "KUNTranslator/KUNTranslator-AppStore.entitlements";
+				CODE_SIGN_STYLE = Manual;
+				ENABLE_HARDENED_RUNTIME = YES;
+				INFOPLIST_FILE = KUNTranslator/Supporting/Info.plist;
+				PRODUCT_BUNDLE_IDENTIFIER = com.kun.translator;
+				PRODUCT_NAME = KUNTranslator;
+			};
+			name = AppStore;
+		};
 		9282E8FC54BEC2B1D4B1F880 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -600,6 +629,23 @@
 				PRODUCT_NAME = KUNTranslatorTests;
 			};
 			name = Release;
+		};
+		9A3CE0597C5C736EAE15E12D /* AppStore */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "Apple Distribution";
+				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = NO;
+				CODE_SIGN_STYLE = Automatic;
+				ENABLE_DEBUG_DYLIB = NO;
+				ENABLE_TESTABILITY = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				MACOSX_DEPLOYMENT_TARGET = 14.4;
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = APP_STORE;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = AppStore;
 		};
 		E2FBFB46B96A79E69E39D552 /* Release */ = {
 			isa = XCBuildConfiguration;
@@ -639,29 +685,32 @@
 		A2670B8A6A9912FAD0C75179 /* Build configuration list for PBXProject "KUNTranslator" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
+				9A3CE0597C5C736EAE15E12D /* AppStore */,
 				FF9B6D245AC505835820B2EE /* Debug */,
 				E2FBFB46B96A79E69E39D552 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Debug;
+			defaultConfigurationName = AppStore;
 		};
 		C37A617F0647491B13CDD716 /* Build configuration list for PBXNativeTarget "KUNTranslatorTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
+				4404D9AA5FA3C8206210D81E /* AppStore */,
 				0163E4E496DE5DE1A0BABDAC /* Debug */,
 				9282E8FC54BEC2B1D4B1F880 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Debug;
+			defaultConfigurationName = AppStore;
 		};
 		CA75AAA7DBCB157C80ECFDE5 /* Build configuration list for PBXNativeTarget "KUNTranslator" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
+				8E4D9A620A7FB3A7E68F65C8 /* AppStore */,
 				0E2F86DAD61B575D8F5C24C8 /* Debug */,
 				6BF1119AABEE6C58613384BD /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Debug;
+			defaultConfigurationName = AppStore;
 		};
 /* End XCConfigurationList section */
 	};

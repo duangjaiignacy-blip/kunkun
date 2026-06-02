@@ -7,7 +7,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusItem: NSStatusItem?
 
     func applicationWillFinishLaunching(_ notification: Notification) {
+        #if !APP_STORE
         redirectDiskImageLaunchIfNeeded()
+        #endif
         terminateDuplicateInstances()
         NSApp.setActivationPolicy(.regular)
     }
@@ -68,6 +70,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         return menu
     }
 
+    #if !APP_STORE
     private func redirectDiskImageLaunchIfNeeded() {
         let currentPath = Bundle.main.bundleURL.path
         guard currentPath.hasPrefix("/Volumes/") else { return }
@@ -81,6 +84,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             NSApp.terminate(nil)
         }
     }
+    #endif
 
     private func terminateDuplicateInstances() {
         let currentPID = ProcessInfo.processInfo.processIdentifier
