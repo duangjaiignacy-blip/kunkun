@@ -1,17 +1,15 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-scheme="${SCHEME:-KUNTranslator-AppStore}"
-configuration="${CONFIGURATION:-AppStore}"
 archive_path="${ARCHIVE_PATH:-build/AppStore/KUNTranslator.xcarchive}"
-derived_data_path="${DERIVED_DATA_PATH:-build/DerivedData-AppStore}"
+export_path="${EXPORT_PATH:-build/AppStore/export}"
+options_plist="${EXPORT_OPTIONS_PLIST:-AppStore/ExportOptions.plist}"
 
 args=(
-  -scheme "$scheme"
-  -configuration "$configuration"
-  -destination "generic/platform=macOS"
+  -exportArchive
   -archivePath "$archive_path"
-  -derivedDataPath "$derived_data_path"
+  -exportPath "$export_path"
+  -exportOptionsPlist "$options_plist"
 )
 
 if [[ "${ALLOW_PROVISIONING_UPDATES:-0}" == "1" ]]; then
@@ -26,14 +24,6 @@ if [[ -n "${ASC_KEY_PATH:-}" && -n "${ASC_KEY_ID:-}" && -n "${ASC_ISSUER_ID:-}" 
   )
 fi
 
-args+=(
-  archive
-)
-
-if [[ -n "${DEVELOPMENT_TEAM:-}" ]]; then
-  args+=(DEVELOPMENT_TEAM="$DEVELOPMENT_TEAM")
-fi
-
 xcodebuild "${args[@]}"
 
-echo "Created archive: $archive_path"
+echo "Exported App Store package to: $export_path"

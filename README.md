@@ -43,7 +43,7 @@ App Store 版必须使用 Apple Developer Program 账号在 Xcode 中签名。�
 
 ```bash
 .tools/bin/xcodegen generate
-DEVELOPMENT_TEAM=你的TeamID Scripts/archive-appstore.sh
+DEVELOPMENT_TEAM=你的TeamID ALLOW_PROVISIONING_UPDATES=1 Scripts/archive-appstore.sh
 ```
 
 生成的 archive 位于：
@@ -52,12 +52,29 @@ DEVELOPMENT_TEAM=你的TeamID Scripts/archive-appstore.sh
 build/AppStore/KUNTranslator.xcarchive
 ```
 
-然后用 Xcode Organizer 上传到 App Store Connect。
+然后用 Xcode Organizer 上传到 App Store Connect，或继续使用命令行导出/上传：
+
+```bash
+Scripts/export-appstore.sh
+Scripts/upload-appstore.sh
+```
+
+如果使用 App Store Connect API Key：
+
+```bash
+export ASC_KEY_PATH="$HOME/.appstoreconnect/private_keys/AuthKey_XXXXXXXXXX.p8"
+export ASC_KEY_ID="XXXXXXXXXX"
+export ASC_ISSUER_ID="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+DEVELOPMENT_TEAM=你的TeamID ALLOW_PROVISIONING_UPDATES=1 Scripts/archive-appstore.sh
+Scripts/upload-appstore.sh
+```
 
 相关文件：
 
 - `KUNTranslator/KUNTranslator-AppStore.entitlements`
 - `KUNTranslator/Resources/PrivacyInfo.xcprivacy`
+- `AppStore/ExportOptions.plist`
+- `AppStore/ExportOptions-Upload.plist`
 - `AppStore/Metadata.md`
 - `AppStore/PrivacyPolicy.md`
 - `AppStore/ReviewNotes.md`

@@ -443,9 +443,6 @@
 					3F541291059098FB80433702 = {
 						ProvisioningStyle = Manual;
 					};
-					E429ECF4E2078A8222C2FC5C = {
-						ProvisioningStyle = Manual;
-					};
 				};
 			};
 			buildConfigurationList = A2670B8A6A9912FAD0C75179 /* Build configuration list for PBXProject "KUNTranslator" */;
@@ -610,7 +607,8 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = "KUNTranslator/KUNTranslator-AppStore.entitlements";
-				CODE_SIGN_STYLE = Manual;
+				CODE_SIGN_IDENTITY = "Apple Distribution";
+				CODE_SIGN_STYLE = Automatic;
 				ENABLE_HARDENED_RUNTIME = YES;
 				INFOPLIST_FILE = KUNTranslator/Supporting/Info.plist;
 				PRODUCT_BUNDLE_IDENTIFIER = com.kun.translator;

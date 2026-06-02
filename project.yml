@@ -46,6 +46,8 @@ targets:
       configs:
         AppStore:
           CODE_SIGN_ENTITLEMENTS: KUNTranslator/KUNTranslator-AppStore.entitlements
+          CODE_SIGN_STYLE: Automatic
+          CODE_SIGN_IDENTITY: "Apple Distribution"
           ENABLE_HARDENED_RUNTIME: YES
     dependencies:
       - sdk: Carbon.framework
