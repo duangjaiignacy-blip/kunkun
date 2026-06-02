@@ -63,9 +63,9 @@ struct SettingsView: View {
                 .frame(width: 40, height: 40)
 
                 VStack(alignment: .leading, spacing: 3) {
-                    Text("困困")
+                    Text("KUN Translator")
                         .font(.title2.weight(.semibold))
-                    Text("系统级语言工作台")
+                    Text("划词翻译 / OCR / 笔记")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -73,8 +73,8 @@ struct SettingsView: View {
             .padding(.top, 24)
 
             HStack(spacing: 8) {
-                SidebarMetric(title: "记录", value: "\(history.count)")
-                SidebarMetric(title: "笔记", value: "\(notes.count)")
+                SidebarMetric(title: "记录", value: "\(history.count)", systemImage: "text.book.closed")
+                SidebarMetric(title: "笔记", value: "\(notes.count)", systemImage: "note.text")
             }
 
             VStack(spacing: 6) {
@@ -93,14 +93,16 @@ struct SettingsView: View {
 
             Spacer()
 
-            VStack(alignment: .leading, spacing: 10) {
-                StatusPill(
-                    title: permissionManager.accessibilityGranted ? "辅助功能" : "辅助功能未开",
-                    isOn: permissionManager.accessibilityGranted
+            VStack(alignment: .leading, spacing: 8) {
+                PermissionMiniCard(
+                    title: "辅助功能",
+                    message: permissionManager.accessibilityGranted ? "已生效" : "需要授权",
+                    isGranted: permissionManager.accessibilityGranted
                 )
-                StatusPill(
-                    title: permissionManager.screenRecordingGranted ? "屏幕录制" : "屏幕录制未开",
-                    isOn: permissionManager.screenRecordingGranted
+                PermissionMiniCard(
+                    title: "屏幕录制",
+                    message: permissionManager.screenRecordingGranted ? "已生效" : "需要授权",
+                    isGranted: permissionManager.screenRecordingGranted
                 )
             }
 
@@ -134,7 +136,7 @@ struct SettingsView: View {
         VStack(spacing: 0) {
             workspaceHeader(
                 title: "翻译记录",
-                subtitle: "快捷键翻译和 OCR 翻译会自动沉淀到这里，方便回看、复制和生成笔记。"
+                subtitle: "近期捕获的原文、译文、音标和上下文。"
             ) {
                 Button {
                     Task { await loadHistory() }
@@ -200,13 +202,13 @@ struct SettingsView: View {
                         VStack(alignment: .leading, spacing: 6) {
                             Text("译文")
                                 .font(.title2.weight(.semibold))
-                            Text("\(item.engine.displayName) / \(item.sourceLanguage) -> \(item.targetLanguage) / \(item.timestamp.formatted(date: .abbreviated, time: .shortened))")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
+                            HStack(spacing: 8) {
+                                MetaChip(title: item.engine.displayName, systemImage: "bolt.horizontal")
+                                MetaChip(title: "\(item.sourceLanguage) -> \(item.targetLanguage)", systemImage: "arrow.left.arrow.right")
+                                MetaChip(title: item.timestamp.formatted(date: .abbreviated, time: .shortened), systemImage: "clock")
+                            }
                             if let phonetic = phonetic(for: item) {
-                                Label("\(settingsStore.settings.speech.englishPronunciation.shortName)音标 \(phonetic)", systemImage: "waveform")
-                                    .font(.callout)
-                                    .foregroundStyle(.secondary)
+                                MetaChip(title: "\(settingsStore.settings.speech.englishPronunciation.shortName)音标 \(phonetic)", systemImage: "waveform")
                                     .textSelection(.enabled)
                             }
                         }
@@ -243,7 +245,7 @@ struct SettingsView: View {
         VStack(spacing: 0) {
             workspaceHeader(
                 title: "总结笔记",
-                subtitle: "把最近翻译整理成可编辑笔记，用来做生词本、阅读摘要或会议资料。"
+                subtitle: "把翻译沉淀成可编辑的阅读摘要和复习材料。"
             ) {
                 Button {
                     newNote()
@@ -307,12 +309,12 @@ struct SettingsView: View {
         VStack(alignment: .leading, spacing: 14) {
             TextField("笔记标题", text: $noteTitle)
                 .textFieldStyle(.plain)
-                .font(.title2.weight(.semibold))
-                .padding(.horizontal, 2)
+                .font(.title.weight(.semibold))
+                .padding(.horizontal, 4)
 
             HStack {
-                Label("\(noteSourceIDs.count) 条翻译来源", systemImage: "link")
-                Text("创建于 \(noteCreatedAt.formatted(date: .abbreviated, time: .shortened))")
+                MetaChip(title: "\(noteSourceIDs.count) 条来源", systemImage: "link")
+                MetaChip(title: noteCreatedAt.formatted(date: .abbreviated, time: .shortened), systemImage: "calendar")
                 Spacer()
                 Text(noteStatus)
                     .foregroundStyle(.secondary)
@@ -329,7 +331,7 @@ struct SettingsView: View {
             TextEditor(text: $noteContent)
                 .font(.body)
                 .scrollContentBackground(.hidden)
-                .padding(14)
+                .padding(18)
                 .background(
                     RoundedRectangle(cornerRadius: 8)
                         .fill(Color(nsColor: .textBackgroundColor).opacity(0.78))
@@ -339,16 +341,16 @@ struct SettingsView: View {
                         .stroke(Color(nsColor: .separatorColor).opacity(0.75), lineWidth: 0.5)
                 )
         }
-        .padding(28)
+        .padding(30)
     }
 
     private var settingsWorkspace: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 18) {
+            VStack(alignment: .leading, spacing: 20) {
                 VStack(alignment: .leading, spacing: 8) {
                     workspaceHeaderContent(
                         title: "设置",
-                        subtitle: "配置翻译引擎、快捷键、权限、AI Key 和朗读参数。"
+                        subtitle: "控制翻译引擎、AI、快捷键、权限和朗读偏好。"
                     )
                     HStack(spacing: 8) {
                         StatusPill(title: settingsStore.settings.selectedEngine.displayName, isOn: true)
@@ -358,130 +360,132 @@ struct SettingsView: View {
                 }
                 .padding(.bottom, 4)
 
-                SettingsPanel(title: "翻译") {
-                    Picker("翻译引擎", selection: $settingsStore.settings.selectedEngine) {
-                        ForEach(availableEngines) { engine in
-                            Text(engine.displayName).tag(engine)
+                LazyVGrid(columns: settingsColumns, alignment: .leading, spacing: 16) {
+                    SettingsPanel(title: "翻译", systemImage: "globe") {
+                        Picker("翻译引擎", selection: $settingsStore.settings.selectedEngine) {
+                            ForEach(availableEngines) { engine in
+                                Text(engine.displayName).tag(engine)
+                            }
                         }
+                        Text("当前 macOS 14 构建使用 DeepSeek / OpenAI-compatible 翻译。升级到 macOS 15+ 后可启用 Apple 翻译。")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        TextField("目标语言", text: $settingsStore.settings.targetLanguage)
+                        Toggle("自动检测源语言", isOn: $settingsStore.settings.autoDetectLanguage)
                     }
-                    Text("当前 macOS 14 构建使用 DeepSeek / OpenAI-compatible 翻译。升级到 macOS 15+ 后可启用 Apple 翻译。")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    TextField("目标语言", text: $settingsStore.settings.targetLanguage)
-                    Toggle("自动检测源语言", isOn: $settingsStore.settings.autoDetectLanguage)
-                }
 
-                SettingsPanel(title: "AI") {
-                    Toggle("开启 AI 增强", isOn: $settingsStore.settings.aiEnhancementEnabled)
-                    HStack {
-                        Button("DeepSeek V4 Flash") {
-                            applyDeepSeek(model: "deepseek-v4-flash")
+                    SettingsPanel(title: "AI", systemImage: "sparkles") {
+                        Toggle("开启 AI 增强", isOn: $settingsStore.settings.aiEnhancementEnabled)
+                        HStack {
+                            Button("DeepSeek V4 Flash") {
+                                applyDeepSeek(model: "deepseek-v4-flash")
+                            }
+                            Button("DeepSeek V4 Pro") {
+                                applyDeepSeek(model: "deepseek-v4-pro")
+                            }
+                            Button("OpenAI") {
+                                settingsStore.settings.openAIModel = AppSettings.openAIModel
+                                settingsStore.settings.openAIBaseURL = AppSettings.openAIBaseURL
+                            }
                         }
-                        Button("DeepSeek V4 Pro") {
-                            applyDeepSeek(model: "deepseek-v4-pro")
-                        }
-                        Button("OpenAI") {
-                            settingsStore.settings.openAIModel = AppSettings.openAIModel
-                            settingsStore.settings.openAIBaseURL = AppSettings.openAIBaseURL
-                        }
-                    }
-                    TextField("模型", text: $settingsStore.settings.openAIModel)
-                    TextField(
-                        "接口地址",
-                        text: Binding(
-                            get: { settingsStore.settings.openAIBaseURL.absoluteString },
-                            set: { value in
-                                if let url = URL(string: value) {
-                                    settingsStore.settings.openAIBaseURL = url
+                        TextField("模型", text: $settingsStore.settings.openAIModel)
+                        TextField(
+                            "接口地址",
+                            text: Binding(
+                                get: { settingsStore.settings.openAIBaseURL.absoluteString },
+                                set: { value in
+                                    if let url = URL(string: value) {
+                                        settingsStore.settings.openAIBaseURL = url
+                                    }
+                                }
+                            )
+                        )
+                        SecureField("API Key", text: $apiKey)
+                        HStack {
+                            Button("保存 API Key") {
+                                do {
+                                    try keychain.saveAPIKey(apiKey)
+                                    apiKeyStatus = "已保存"
+                                } catch {
+                                    apiKeyStatus = error.localizedDescription
                                 }
                             }
-                        )
-                    )
-                    SecureField("API Key", text: $apiKey)
-                    HStack {
-                        Button("保存 API Key") {
-                            do {
-                                try keychain.saveAPIKey(apiKey)
-                                apiKeyStatus = "已保存"
-                            } catch {
-                                apiKeyStatus = error.localizedDescription
+                            Button("删除 API Key") {
+                                do {
+                                    try keychain.deleteAPIKey()
+                                    apiKey = ""
+                                    apiKeyStatus = "已删除"
+                                } catch {
+                                    apiKeyStatus = error.localizedDescription
+                                }
                             }
+                            Text(apiKeyStatus)
+                                .foregroundStyle(.secondary)
                         }
-                        Button("删除 API Key") {
-                            do {
-                                try keychain.deleteAPIKey()
-                                apiKey = ""
-                                apiKeyStatus = "已删除"
-                            } catch {
-                                apiKeyStatus = error.localizedDescription
-                            }
-                        }
-                        Text(apiKeyStatus)
+                        Text("DeepSeek 接口地址填 https://api.deepseek.com 即可，程序会自动请求 /chat/completions。")
+                            .font(.caption)
                             .foregroundStyle(.secondary)
                     }
-                    Text("DeepSeek 接口地址填 https://api.deepseek.com 即可，程序会自动请求 /chat/completions。")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
 
-                SettingsPanel(title: "外观与快捷键") {
-                    Picker("外观", selection: $settingsStore.settings.appearance) {
-                        ForEach(AppAppearance.allCases) { appearance in
-                            Text(appearance.displayName).tag(appearance)
+                    SettingsPanel(title: "外观与快捷键", systemImage: "keyboard") {
+                        Picker("外观", selection: $settingsStore.settings.appearance) {
+                            ForEach(AppAppearance.allCases) { appearance in
+                                Text(appearance.displayName).tag(appearance)
+                            }
+                        }
+                        Slider(value: $settingsStore.settings.overlayOpacity, in: 0.5...1.0) {
+                            Text("悬浮窗透明度")
+                        }
+                        HotkeyRecorderRow(title: "翻译选中文本", hotkey: $settingsStore.settings.hotkeys.translateSelection)
+                        HotkeyRecorderRow(title: "截图 OCR 翻译", hotkey: $settingsStore.settings.hotkeys.translateScreenshot)
+                        HotkeyRecorderRow(title: "朗读选中文本", hotkey: $settingsStore.settings.hotkeys.speakSelection)
+                        if GlobalHotkeyManager.hasConflicts(settingsStore.settings.hotkeys) {
+                            Text("快捷键不能重复。")
+                                .font(.caption)
+                                .foregroundStyle(.red)
                         }
                     }
-                    Slider(value: $settingsStore.settings.overlayOpacity, in: 0.5...1.0) {
-                        Text("悬浮窗透明度")
-                    }
-                    HotkeyRecorderRow(title: "翻译选中文本", hotkey: $settingsStore.settings.hotkeys.translateSelection)
-                    HotkeyRecorderRow(title: "截图 OCR 翻译", hotkey: $settingsStore.settings.hotkeys.translateScreenshot)
-                    HotkeyRecorderRow(title: "朗读选中文本", hotkey: $settingsStore.settings.hotkeys.speakSelection)
-                    if GlobalHotkeyManager.hasConflicts(settingsStore.settings.hotkeys) {
-                        Text("快捷键不能重复。")
+
+                    SettingsPanel(title: "权限", systemImage: "lock.shield") {
+                        PermissionStatusRow(
+                            title: "辅助功能",
+                            isGranted: permissionManager.accessibilityGranted,
+                            actionTitle: "打开辅助功能设置",
+                            action: {
+                                permissionManager.requestAccessibility()
+                                permissionManager.openAccessibilitySettings()
+                            }
+                        )
+                        PermissionStatusRow(
+                            title: "屏幕录制",
+                            isGranted: permissionManager.screenRecordingGranted,
+                            actionTitle: "打开屏幕录制设置",
+                            action: {
+                                permissionManager.requestScreenRecording()
+                                permissionManager.openScreenRecordingSettings()
+                            }
+                        )
+                        Button("重新检查权限") {
+                            permissionManager.refreshNow()
+                        }
+                        Text("如果系统设置里已经勾选但这里仍显示未生效，请先删除旧条目，再把 /Applications/KUNTranslator.app 重新添加进去。调试版重新签名后，macOS 可能会把旧授权视为失效。")
                             .font(.caption)
-                            .foregroundStyle(.red)
+                            .foregroundStyle(.secondary)
                     }
-                }
 
-                SettingsPanel(title: "权限") {
-                    PermissionStatusRow(
-                        title: "辅助功能",
-                        isGranted: permissionManager.accessibilityGranted,
-                        actionTitle: "打开辅助功能设置",
-                        action: {
-                            permissionManager.requestAccessibility()
-                            permissionManager.openAccessibilitySettings()
+                    SettingsPanel(title: "朗读", systemImage: "speaker.wave.2") {
+                        Picker("英语发音", selection: $settingsStore.settings.speech.englishPronunciation) {
+                            ForEach(EnglishPronunciation.allCases) { pronunciation in
+                                Text(pronunciation.displayName).tag(pronunciation)
+                            }
                         }
-                    )
-                    PermissionStatusRow(
-                        title: "屏幕录制",
-                        isGranted: permissionManager.screenRecordingGranted,
-                        actionTitle: "打开屏幕录制设置",
-                        action: {
-                            permissionManager.requestScreenRecording()
-                            permissionManager.openScreenRecordingSettings()
-                        }
-                    )
-                    Button("重新检查权限") {
-                        permissionManager.refreshNow()
+                        Slider(value: $settingsStore.settings.speech.rate, in: 0.1...0.7) { Text("语速") }
+                        Slider(value: $settingsStore.settings.speech.pitch, in: 0.5...2.0) { Text("音调") }
+                        Slider(value: $settingsStore.settings.speech.volume, in: 0.1...1.0) { Text("音量") }
+                        Text("音标和朗读会跟随这里的美式/英式选择。若手动指定系统 voiceIdentifier，则优先使用指定声音。")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
                     }
-                    Text("如果系统设置里已经勾选但这里仍显示未生效，请先删除旧条目，再把 /Applications/KUNTranslator.app 重新添加进去。调试版重新签名后，macOS 可能会把旧授权视为失效。")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-
-                SettingsPanel(title: "朗读") {
-                    Picker("英语发音", selection: $settingsStore.settings.speech.englishPronunciation) {
-                        ForEach(EnglishPronunciation.allCases) { pronunciation in
-                            Text(pronunciation.displayName).tag(pronunciation)
-                        }
-                    }
-                    Slider(value: $settingsStore.settings.speech.rate, in: 0.1...0.7) { Text("语速") }
-                    Slider(value: $settingsStore.settings.speech.pitch, in: 0.5...2.0) { Text("音调") }
-                    Slider(value: $settingsStore.settings.speech.volume, in: 0.1...1.0) { Text("音量") }
-                    Text("音标和朗读会跟随这里的美式/英式选择。若手动指定系统 voiceIdentifier，则优先使用指定声音。")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
                 }
             }
             .padding(28)
@@ -682,6 +686,12 @@ struct SettingsView: View {
         [.openAI]
 #endif
     }
+
+    private var settingsColumns: [GridItem] {
+        [
+            GridItem(.adaptive(minimum: 330, maximum: 520), spacing: 16, alignment: .top)
+        ]
+    }
 }
 
 private enum WorkspaceSection: CaseIterable, Identifiable {
@@ -715,7 +725,8 @@ private struct AppBackdrop: View {
             LinearGradient(
                 colors: [
                     Color.teal.opacity(0.10),
-                    Color.blue.opacity(0.05),
+                    Color.indigo.opacity(0.045),
+                    Color.orange.opacity(0.035),
                     Color.clear
                 ],
                 startPoint: .topLeading,
@@ -733,18 +744,24 @@ private struct AppBackdrop: View {
 private struct SidebarMetric: View {
     let title: String
     let value: String
+    let systemImage: String
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 3) {
-            Text(value)
-                .font(.headline.weight(.semibold))
-            Text(title)
-                .font(.caption2)
-                .foregroundStyle(.secondary)
+        VStack(alignment: .leading, spacing: 8) {
+            Image(systemName: systemImage)
+                .font(.caption.weight(.bold))
+                .foregroundStyle(Color.accentColor)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(value)
+                    .font(.headline.weight(.semibold))
+                Text(title)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 10)
-        .padding(.vertical, 8)
+        .padding(.vertical, 10)
         .background(
             RoundedRectangle(cornerRadius: 8)
                 .fill(Color(nsColor: .textBackgroundColor).opacity(0.55))
@@ -752,6 +769,37 @@ private struct SidebarMetric: View {
         .overlay(
             RoundedRectangle(cornerRadius: 8)
                 .stroke(Color(nsColor: .separatorColor).opacity(0.45), lineWidth: 0.5)
+        )
+    }
+}
+
+private struct PermissionMiniCard: View {
+    let title: String
+    let message: String
+    let isGranted: Bool
+
+    var body: some View {
+        HStack(spacing: 9) {
+            Image(systemName: isGranted ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
+                .font(.callout.weight(.semibold))
+                .foregroundStyle(isGranted ? .green : .orange)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.caption.weight(.semibold))
+                Text(message)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(10)
+        .background(
+            RoundedRectangle(cornerRadius: 8)
+                .fill((isGranted ? Color.green : Color.orange).opacity(0.09))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 8)
+                .stroke((isGranted ? Color.green : Color.orange).opacity(0.20), lineWidth: 0.5)
         )
     }
 }
@@ -769,6 +817,28 @@ private struct StatusPill: View {
             .background(
                 Capsule()
                     .fill((isOn ? Color.green : Color.orange).opacity(0.11))
+            )
+    }
+}
+
+private struct MetaChip: View {
+    let title: String
+    let systemImage: String
+
+    var body: some View {
+        Label(title, systemImage: systemImage)
+            .font(.caption.weight(.medium))
+            .foregroundStyle(.secondary)
+            .lineLimit(1)
+            .padding(.horizontal, 9)
+            .padding(.vertical, 6)
+            .background(
+                Capsule()
+                    .fill(Color(nsColor: .textBackgroundColor).opacity(0.62))
+            )
+            .overlay(
+                Capsule()
+                    .stroke(Color(nsColor: .separatorColor).opacity(0.44), lineWidth: 0.5)
             )
     }
 }
@@ -975,17 +1045,20 @@ private struct SearchField: View {
 
 private struct SettingsPanel<Content: View>: View {
     let title: String
+    let systemImage: String
     let content: Content
 
-    init(title: String, @ViewBuilder content: () -> Content) {
+    init(title: String, systemImage: String, @ViewBuilder content: () -> Content) {
         self.title = title
+        self.systemImage = systemImage
         self.content = content()
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text(title)
+            Label(title, systemImage: systemImage)
                 .font(.headline.weight(.semibold))
+                .foregroundStyle(.primary)
             VStack(alignment: .leading, spacing: 12) {
                 content
             }
@@ -1001,6 +1074,7 @@ private struct SettingsPanel<Content: View>: View {
             RoundedRectangle(cornerRadius: 8)
                 .stroke(Color(nsColor: .separatorColor).opacity(0.42), lineWidth: 0.5)
         )
+        .frame(maxWidth: .infinity, alignment: .topLeading)
     }
 }
 
