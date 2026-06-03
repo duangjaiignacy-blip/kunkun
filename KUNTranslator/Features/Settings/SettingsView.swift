@@ -12,6 +12,9 @@ struct SettingsView: View {
     @State private var section: WorkspaceSection = .history
     @State private var apiKey = ""
     @State private var apiKeyStatus = ""
+    @State private var feishuWebhookURL = ""
+    @State private var feishuStatus = ""
+    @State private var isTestingFeishu = false
     @State private var history: [HistoryItem] = []
     @State private var selectedHistoryID: UUID?
     @State private var searchText = ""
@@ -23,6 +26,8 @@ struct SettingsView: View {
     @State private var noteSourceIDs: [UUID] = []
     @State private var noteCreatedAt = Date()
     @State private var noteStatus = ""
+    @State private var serviceMode: ServiceMode = .textTranslation
+    @State private var selectedService: TranslationServiceKind = .deepSeek
 
     var body: some View {
         ZStack {
@@ -41,6 +46,7 @@ struct SettingsView: View {
         .frame(minWidth: 900, minHeight: 620)
         .task {
             apiKey = (try? keychain.readAPIKey()) ?? ""
+            feishuWebhookURL = (try? keychain.readAPIKey(account: "feishuWebhook")) ?? ""
             await loadHistory()
             await loadNotes()
         }
@@ -77,17 +83,26 @@ struct SettingsView: View {
                 SidebarMetric(title: "笔记", value: "\(notes.count)", systemImage: "note.text")
             }
 
-            VStack(spacing: 6) {
-                ForEach(WorkspaceSection.allCases) { item in
-                    Button {
-                        withAnimation(.snappy(duration: 0.18)) {
-                            section = item
+            VStack(alignment: .leading, spacing: 16) {
+                ForEach(SidebarGroup.allCases) { group in
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text(group.title)
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                            .textCase(.uppercase)
+                            .padding(.horizontal, 14)
+                        ForEach(group.sections) { item in
+                            Button {
+                                withAnimation(.snappy(duration: 0.18)) {
+                                    section = item
+                                }
+                            } label: {
+                                Label(item.title, systemImage: item.systemImage)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                            }
+                            .buttonStyle(SidebarButtonStyle(isSelected: section == item))
                         }
-                    } label: {
-                        Label(item.title, systemImage: item.systemImage)
-                            .frame(maxWidth: .infinity, alignment: .leading)
                     }
-                    .buttonStyle(SidebarButtonStyle(isSelected: section == item))
                 }
             }
 
@@ -123,12 +138,18 @@ struct SettingsView: View {
     @ViewBuilder
     private var content: some View {
         switch section {
+        case .translation:
+            translationWorkspace
+        case .services:
+            servicesWorkspace
+        case .ocr:
+            ocrWorkspace
         case .history:
             historyWorkspace
         case .notes:
             notesWorkspace
-        case .settings:
-            settingsWorkspace
+        case .general:
+            generalWorkspace
         }
     }
 
@@ -344,37 +365,35 @@ struct SettingsView: View {
         .padding(30)
     }
 
-    private var settingsWorkspace: some View {
+    private var translationWorkspace: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                VStack(alignment: .leading, spacing: 8) {
-                    workspaceHeaderContent(
-                        title: "设置",
-                        subtitle: "控制翻译引擎、AI、快捷键、权限和朗读偏好。"
-                    )
-                    HStack(spacing: 8) {
-                        StatusPill(title: settingsStore.settings.selectedEngine.displayName, isOn: true)
-                        StatusPill(title: settingsStore.settings.aiEnhancementEnabled ? "AI 已开启" : "AI 已关闭", isOn: settingsStore.settings.aiEnhancementEnabled)
-                        StatusPill(title: settingsStore.settings.speech.englishPronunciation.shortName, isOn: true)
-                    }
-                }
-                .padding(.bottom, 4)
+                workspaceHero(
+                    title: "翻译设置",
+                    subtitle: "配置目标语言、翻译引擎、AI 增强和全局划词行为。",
+                    systemImage: "character.bubble",
+                    badges: [
+                        settingsStore.settings.selectedEngine.displayName,
+                        settingsStore.settings.targetLanguage,
+                        settingsStore.settings.aiEnhancementEnabled ? "AI 已开启" : "AI 已关闭"
+                    ]
+                )
 
                 LazyVGrid(columns: settingsColumns, alignment: .leading, spacing: 16) {
-                    SettingsPanel(title: "翻译", systemImage: "globe") {
+                    SettingsPanel(title: "基础翻译", systemImage: "globe") {
                         Picker("翻译引擎", selection: $settingsStore.settings.selectedEngine) {
                             ForEach(availableEngines) { engine in
                                 Text(engine.displayName).tag(engine)
                             }
                         }
-                        Text("当前 macOS 14 构建使用 DeepSeek / OpenAI-compatible 翻译。升级到 macOS 15+ 后可启用 Apple 翻译。")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
                         TextField("目标语言", text: $settingsStore.settings.targetLanguage)
                         Toggle("自动检测源语言", isOn: $settingsStore.settings.autoDetectLanguage)
+                        Text("建议使用 zh-Hans、en、ja 等标准语言代码；开启自动检测后，系统会根据原文自动判断源语言。")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
                     }
 
-                    SettingsPanel(title: "AI", systemImage: "sparkles") {
+                    SettingsPanel(title: "AI 增强", systemImage: "sparkles") {
                         Toggle("开启 AI 增强", isOn: $settingsStore.settings.aiEnhancementEnabled)
                         HStack {
                             Button("DeepSeek V4 Flash") {
@@ -388,46 +407,239 @@ struct SettingsView: View {
                                 settingsStore.settings.openAIBaseURL = AppSettings.openAIBaseURL
                             }
                         }
-                        TextField("模型", text: $settingsStore.settings.openAIModel)
-                        TextField(
-                            "接口地址",
-                            text: Binding(
-                                get: { settingsStore.settings.openAIBaseURL.absoluteString },
-                                set: { value in
-                                    if let url = URL(string: value) {
-                                        settingsStore.settings.openAIBaseURL = url
-                                    }
-                                }
-                            )
-                        )
-                        SecureField("API Key", text: $apiKey)
-                        HStack {
-                            Button("保存 API Key") {
-                                do {
-                                    try keychain.saveAPIKey(apiKey)
-                                    apiKeyStatus = "已保存"
-                                } catch {
-                                    apiKeyStatus = error.localizedDescription
-                                }
-                            }
-                            Button("删除 API Key") {
-                                do {
-                                    try keychain.deleteAPIKey()
-                                    apiKey = ""
-                                    apiKeyStatus = "已删除"
-                                } catch {
-                                    apiKeyStatus = error.localizedDescription
-                                }
-                            }
-                            Text(apiKeyStatus)
-                                .foregroundStyle(.secondary)
-                        }
-                        Text("DeepSeek 接口地址填 https://api.deepseek.com 即可，程序会自动请求 /chat/completions。")
+                        Text("AI 增强用于润色、解释、总结和改写；基础翻译仍由当前服务配置决定。")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
 
-                    SettingsPanel(title: "外观与快捷键", systemImage: "keyboard") {
+                    SettingsPanel(title: "划词快捷键", systemImage: "keyboard") {
+                        HotkeyRecorderRow(title: "翻译选中文本", hotkey: $settingsStore.settings.hotkeys.translateSelection)
+                        HotkeyRecorderRow(title: "朗读选中文本", hotkey: $settingsStore.settings.hotkeys.speakSelection)
+                        if GlobalHotkeyManager.hasConflicts(settingsStore.settings.hotkeys) {
+                            Text("快捷键不能重复。")
+                                .font(.caption)
+                                .foregroundStyle(.red)
+                        }
+                    }
+                }
+            }
+            .padding(28)
+        }
+        .background(Color(nsColor: .windowBackgroundColor).opacity(0.42))
+    }
+
+    private var servicesWorkspace: some View {
+        VStack(spacing: 0) {
+            workspaceHeader(
+                title: "服务",
+                subtitle: "翻译功能的核心服务支持配置，下方开启的服务将被使用。"
+            ) {
+                Button {
+                    openHelp()
+                } label: {
+                    Label("使用教程", systemImage: "questionmark.circle")
+                }
+            }
+            .buttonStyle(HeaderActionButtonStyle())
+
+            VStack(alignment: .leading, spacing: 18) {
+                Picker("服务类型", selection: $serviceMode) {
+                    ForEach(ServiceMode.allCases) { mode in
+                        Text(mode.title).tag(mode)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .frame(maxWidth: 520)
+                .labelsHidden()
+
+                HStack(alignment: .top, spacing: 22) {
+                    serviceList
+                        .frame(width: 360)
+
+                    serviceDetail
+                        .frame(maxWidth: .infinity, alignment: .topLeading)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            }
+            .padding(28)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            .background(Color(nsColor: .windowBackgroundColor).opacity(0.42))
+        }
+    }
+
+    @ViewBuilder
+    private var serviceList: some View {
+        switch serviceMode {
+        case .textTranslation:
+            VStack(spacing: 0) {
+                ForEach(TranslationServiceKind.allCases) { service in
+                    Button {
+                        selectedService = service
+                    } label: {
+                        ServiceListRow(
+                            title: service.title,
+                            subtitle: service.subtitle,
+                            systemImage: service.systemImage,
+                            isBuiltIn: service.isBuiltIn,
+                            isOn: serviceIsOn(service),
+                            isSelected: selectedService == service
+                        )
+                    }
+                    .buttonStyle(.plain)
+                    if service != TranslationServiceKind.allCases.last {
+                        Divider().padding(.leading, 58)
+                    }
+                }
+                Spacer(minLength: 0)
+            }
+            .serviceListBackground()
+        case .textRecognition:
+            VStack(spacing: 0) {
+                ServiceListRow(
+                    title: "Vision OCR",
+                    subtitle: "本机文字识别",
+                    systemImage: "viewfinder",
+                    isBuiltIn: true,
+                    isOn: true,
+                    isSelected: true
+                )
+                Divider().padding(.leading, 58)
+                ServiceListRow(
+                    title: "ScreenCaptureKit",
+                    subtitle: "区域截图捕获",
+                    systemImage: "rectangle.dashed",
+                    isBuiltIn: true,
+                    isOn: permissionManager.screenRecordingGranted,
+                    isSelected: false
+                )
+                Spacer(minLength: 0)
+            }
+            .serviceListBackground()
+        case .speechSynthesis:
+            VStack(spacing: 0) {
+                ServiceListRow(
+                    title: "系统语音合成",
+                    subtitle: settingsStore.settings.speech.englishPronunciation.displayName,
+                    systemImage: "speaker.wave.2",
+                    isBuiltIn: true,
+                    isOn: true,
+                    isSelected: true
+                )
+                Spacer(minLength: 0)
+            }
+            .serviceListBackground()
+        }
+    }
+
+    @ViewBuilder
+    private var serviceDetail: some View {
+        switch serviceMode {
+        case .textTranslation:
+            TranslationServiceDetail(
+                selectedService: selectedService,
+                settingsStore: settingsStore,
+                apiKey: $apiKey,
+                apiKeyStatus: $apiKeyStatus,
+                feishuWebhookURL: $feishuWebhookURL,
+                feishuStatus: $feishuStatus,
+                isTestingFeishu: isTestingFeishu,
+                keychain: keychain,
+                saveAPIKey: saveAPIKey,
+                deleteAPIKey: deleteAPIKey,
+                applyDeepSeek: applyDeepSeek,
+                testFeishuConnection: { Task { await testFeishuConnection() } }
+            )
+        case .textRecognition:
+            SettingsDetailSurface(title: "文本识别", subtitle: "截图 OCR 使用 macOS 原生 ScreenCaptureKit 和 Vision。") {
+                PermissionStatusRow(
+                    title: "屏幕录制",
+                    isGranted: permissionManager.screenRecordingGranted,
+                    actionTitle: "打开屏幕录制设置",
+                    action: {
+                        permissionManager.requestScreenRecording()
+                        permissionManager.openScreenRecordingSettings()
+                    }
+                )
+                Divider()
+                HotkeyRecorderRow(title: "截图 OCR 翻译", hotkey: $settingsStore.settings.hotkeys.translateScreenshot)
+                Text("OCR 只会识别你框选的屏幕区域。授权后无需重启，点击重新检查权限即可刷新状态。")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        case .speechSynthesis:
+            SettingsDetailSurface(title: "语音合成", subtitle: "朗读使用 AVSpeechSynthesizer，本机完成，不需要上传音频。") {
+                Picker("英语发音", selection: $settingsStore.settings.speech.englishPronunciation) {
+                    ForEach(EnglishPronunciation.allCases) { pronunciation in
+                        Text(pronunciation.displayName).tag(pronunciation)
+                    }
+                }
+                Slider(value: $settingsStore.settings.speech.rate, in: 0.1...0.7) { Text("语速") }
+                Slider(value: $settingsStore.settings.speech.pitch, in: 0.5...2.0) { Text("音调") }
+                Slider(value: $settingsStore.settings.speech.volume, in: 0.1...1.0) { Text("音量") }
+                Text("音标和朗读会跟随美式/英式选择。若手动指定系统 voiceIdentifier，则优先使用指定声音。")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    private var ocrWorkspace: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+                workspaceHero(
+                    title: "OCR 设置",
+                    subtitle: "管理截图识别、屏幕录制权限和 OCR 翻译快捷键。",
+                    systemImage: "viewfinder.rectangular",
+                    badges: [
+                        permissionManager.screenRecordingGranted ? "屏幕录制已生效" : "屏幕录制未生效",
+                        "Vision OCR"
+                    ]
+                )
+
+                LazyVGrid(columns: settingsColumns, alignment: .leading, spacing: 16) {
+                    SettingsPanel(title: "截图识别", systemImage: "rectangle.dashed") {
+                        PermissionStatusRow(
+                            title: "屏幕录制",
+                            isGranted: permissionManager.screenRecordingGranted,
+                            actionTitle: "打开屏幕录制设置",
+                            action: {
+                                permissionManager.requestScreenRecording()
+                                permissionManager.openScreenRecordingSettings()
+                            }
+                        )
+                        Button("重新检查权限") {
+                            permissionManager.refreshNow()
+                        }
+                        Text("用于框选屏幕区域后进行 OCR。当前实现不会持续录屏，只在你触发 OCR 时捕获选区图像。")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    SettingsPanel(title: "OCR 快捷键", systemImage: "keyboard") {
+                        HotkeyRecorderRow(title: "截图 OCR 翻译", hotkey: $settingsStore.settings.hotkeys.translateScreenshot)
+                    }
+                }
+            }
+            .padding(28)
+        }
+        .background(Color(nsColor: .windowBackgroundColor).opacity(0.42))
+    }
+
+    private var generalWorkspace: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+                workspaceHero(
+                    title: "通用设置",
+                    subtitle: "管理外观、权限、历史容量和系统级运行状态。",
+                    systemImage: "gearshape.2",
+                    badges: [
+                        settingsStore.settings.appearance.displayName,
+                        "\(settingsStore.settings.maxHistoryItems) 条历史"
+                    ]
+                )
+
+                LazyVGrid(columns: settingsColumns, alignment: .leading, spacing: 16) {
+                    SettingsPanel(title: "外观", systemImage: "paintbrush") {
                         Picker("外观", selection: $settingsStore.settings.appearance) {
                             ForEach(AppAppearance.allCases) { appearance in
                                 Text(appearance.displayName).tag(appearance)
@@ -435,14 +647,6 @@ struct SettingsView: View {
                         }
                         Slider(value: $settingsStore.settings.overlayOpacity, in: 0.5...1.0) {
                             Text("悬浮窗透明度")
-                        }
-                        HotkeyRecorderRow(title: "翻译选中文本", hotkey: $settingsStore.settings.hotkeys.translateSelection)
-                        HotkeyRecorderRow(title: "截图 OCR 翻译", hotkey: $settingsStore.settings.hotkeys.translateScreenshot)
-                        HotkeyRecorderRow(title: "朗读选中文本", hotkey: $settingsStore.settings.hotkeys.speakSelection)
-                        if GlobalHotkeyManager.hasConflicts(settingsStore.settings.hotkeys) {
-                            Text("快捷键不能重复。")
-                                .font(.caption)
-                                .foregroundStyle(.red)
                         }
                     }
 
@@ -468,9 +672,6 @@ struct SettingsView: View {
                         Button("重新检查权限") {
                             permissionManager.refreshNow()
                         }
-                        Text("如果系统设置里已经勾选但这里仍显示未生效，请先删除旧条目，再把 /Applications/KUNTranslator.app 重新添加进去。调试版重新签名后，macOS 可能会把旧授权视为失效。")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
                     }
 
                     SettingsPanel(title: "朗读", systemImage: "speaker.wave.2") {
@@ -482,7 +683,13 @@ struct SettingsView: View {
                         Slider(value: $settingsStore.settings.speech.rate, in: 0.1...0.7) { Text("语速") }
                         Slider(value: $settingsStore.settings.speech.pitch, in: 0.5...2.0) { Text("音调") }
                         Slider(value: $settingsStore.settings.speech.volume, in: 0.1...1.0) { Text("音量") }
-                        Text("音标和朗读会跟随这里的美式/英式选择。若手动指定系统 voiceIdentifier，则优先使用指定声音。")
+                    }
+
+                    SettingsPanel(title: "系统状态", systemImage: "waveform.path.ecg") {
+                        StatusLine(title: "辅助功能", isOn: permissionManager.accessibilityGranted)
+                        StatusLine(title: "屏幕录制", isOn: permissionManager.screenRecordingGranted)
+                        StatusLine(title: "AI 增强", isOn: settingsStore.settings.aiEnhancementEnabled)
+                        Text("如果系统设置里已经勾选但仍显示未生效，请删除旧条目，再重新添加 /Applications/KUNTranslator.app。")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
@@ -491,6 +698,70 @@ struct SettingsView: View {
             .padding(28)
         }
         .background(Color(nsColor: .windowBackgroundColor).opacity(0.42))
+    }
+
+    private func workspaceHero(title: String, subtitle: String, systemImage: String, badges: [String]) -> some View {
+        HStack(alignment: .center, spacing: 16) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(Color.accentColor.opacity(0.14))
+                Image(systemName: systemImage)
+                    .font(.system(size: 24, weight: .semibold))
+                    .foregroundStyle(Color.accentColor)
+            }
+            .frame(width: 54, height: 54)
+
+            VStack(alignment: .leading, spacing: 7) {
+                workspaceHeaderContent(title: title, subtitle: subtitle)
+                HStack(spacing: 8) {
+                    ForEach(badges, id: \.self) { badge in
+                        MetaChip(title: badge, systemImage: "checkmark.circle")
+                    }
+                }
+            }
+            Spacer()
+        }
+        .padding(20)
+        .background(
+            RoundedRectangle(cornerRadius: 8)
+                .fill(.ultraThinMaterial)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(Color(nsColor: .separatorColor).opacity(0.42), lineWidth: 0.5)
+        )
+    }
+
+    private func saveAPIKey() {
+        do {
+            try keychain.saveAPIKey(apiKey)
+            apiKeyStatus = "已保存"
+        } catch {
+            apiKeyStatus = error.localizedDescription
+        }
+    }
+
+    private func deleteAPIKey() {
+        do {
+            try keychain.deleteAPIKey()
+            apiKey = ""
+            apiKeyStatus = "已删除"
+        } catch {
+            apiKeyStatus = error.localizedDescription
+        }
+    }
+
+    private func serviceIsOn(_ service: TranslationServiceKind) -> Bool {
+        switch service {
+        case .deepSeek:
+            settingsStore.settings.openAIBaseURL == AppSettings.deepSeekBaseURL
+        case .openAICompatible:
+            settingsStore.settings.selectedEngine == .openAI
+        case .system:
+            settingsStore.settings.selectedEngine == .apple
+        case .feishu:
+            !feishuWebhookURL.trimmedForUI.isEmpty
+        }
     }
 
     private func workspaceHeader<Actions: View>(
@@ -679,6 +950,29 @@ struct SettingsView: View {
         settingsStore.settings.openAIBaseURL = AppSettings.deepSeekBaseURL
     }
 
+    private func testFeishuConnection() async {
+        let webhook = feishuWebhookURL.trimmedForUI
+        guard !webhook.isEmpty else {
+            feishuStatus = "请先填写 Webhook"
+            return
+        }
+
+        isTestingFeishu = true
+        feishuStatus = "正在发送..."
+        defer { isTestingFeishu = false }
+
+        do {
+            try await FeishuWebhookClient().send(
+                text: "困困翻译助手已成功连接飞书。",
+                webhookURL: webhook
+            )
+            try keychain.saveAPIKey(webhook, account: "feishuWebhook")
+            feishuStatus = "测试消息已发送"
+        } catch {
+            feishuStatus = error.localizedDescription
+        }
+    }
+
     private var availableEngines: [TranslationEngineKind] {
 #if HAS_APPLE_TRANSLATION
         TranslationEngineKind.allCases.filter { $0 != .mock }
@@ -692,28 +986,125 @@ struct SettingsView: View {
             GridItem(.adaptive(minimum: 330, maximum: 520), spacing: 16, alignment: .top)
         ]
     }
+
+    private func openHelp() {
+        guard let url = URL(string: "https://github.com/duangjaiignacy-blip/kunkun") else { return }
+        NSWorkspace.shared.open(url)
+    }
 }
 
 private enum WorkspaceSection: CaseIterable, Identifiable {
+    case translation
+    case services
+    case ocr
     case history
     case notes
-    case settings
+    case general
 
     var id: Self { self }
 
     var title: String {
         switch self {
+        case .translation: "翻译设置"
+        case .services: "服务"
+        case .ocr: "OCR 设置"
         case .history: "翻译记录"
         case .notes: "总结笔记"
-        case .settings: "设置"
+        case .general: "通用设置"
         }
     }
 
     var systemImage: String {
         switch self {
+        case .translation: "scope"
+        case .services: "cube"
+        case .ocr: "viewfinder"
         case .history: "text.book.closed"
         case .notes: "note.text"
-        case .settings: "gearshape"
+        case .general: "gearshape"
+        }
+    }
+}
+
+private enum SidebarGroup: CaseIterable, Identifiable {
+    case translation
+    case ocr
+    case general
+
+    var id: Self { self }
+
+    var title: String {
+        switch self {
+        case .translation: "翻译"
+        case .ocr: "OCR"
+        case .general: "通用"
+        }
+    }
+
+    var sections: [WorkspaceSection] {
+        switch self {
+        case .translation: [.translation, .services, .history, .notes]
+        case .ocr: [.ocr]
+        case .general: [.general]
+        }
+    }
+}
+
+private enum ServiceMode: String, CaseIterable, Identifiable {
+    case textTranslation
+    case textRecognition
+    case speechSynthesis
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .textTranslation: "文本翻译"
+        case .textRecognition: "文本识别"
+        case .speechSynthesis: "语音合成"
+        }
+    }
+}
+
+private enum TranslationServiceKind: CaseIterable, Identifiable {
+    case deepSeek
+    case openAICompatible
+    case system
+    case feishu
+
+    var id: Self { self }
+
+    var title: String {
+        switch self {
+        case .deepSeek: "DeepSeek 翻译"
+        case .openAICompatible: "OpenAI 兼容"
+        case .system: "系统翻译"
+        case .feishu: "飞书通知"
+        }
+    }
+
+    var subtitle: String {
+        switch self {
+        case .deepSeek: "默认推荐服务"
+        case .openAICompatible: "自定义模型和接口"
+        case .system: "Apple Translation"
+        case .feishu: "群机器人 Webhook"
+        }
+    }
+
+    var systemImage: String {
+        switch self {
+        case .deepSeek: "sparkles"
+        case .openAICompatible: "server.rack"
+        case .system: "macwindow"
+        case .feishu: "paperplane"
+        }
+    }
+
+    var isBuiltIn: Bool {
+        switch self {
+        case .deepSeek, .system: true
+        case .openAICompatible, .feishu: false
         }
     }
 }
@@ -839,6 +1230,260 @@ private struct MetaChip: View {
             .overlay(
                 Capsule()
                     .stroke(Color(nsColor: .separatorColor).opacity(0.44), lineWidth: 0.5)
+            )
+    }
+}
+
+private struct ServiceListRow: View {
+    let title: String
+    let subtitle: String
+    let systemImage: String
+    let isBuiltIn: Bool
+    let isOn: Bool
+    let isSelected: Bool
+
+    var body: some View {
+        HStack(spacing: 12) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 6)
+                    .fill(isSelected ? Color.accentColor.opacity(0.16) : Color(nsColor: .textBackgroundColor).opacity(0.72))
+                Image(systemName: systemImage)
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(isSelected ? Color.accentColor : .secondary)
+            }
+            .frame(width: 34, height: 34)
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(title)
+                    .font(.headline.weight(.semibold))
+                    .foregroundStyle(.primary)
+                Text(subtitle)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Spacer()
+
+            if isBuiltIn {
+                Text("内置")
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(Capsule().fill(Color.teal))
+            }
+
+            Toggle("", isOn: .constant(isOn))
+                .labelsHidden()
+                .controlSize(.small)
+                .allowsHitTesting(false)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 13)
+        .background(isSelected ? Color.accentColor.opacity(0.08) : Color.clear)
+        .contentShape(Rectangle())
+    }
+}
+
+private struct SettingsDetailSurface<Content: View>: View {
+    let title: String
+    let subtitle: String
+    let content: Content
+
+    init(title: String, subtitle: String, @ViewBuilder content: () -> Content) {
+        self.title = title
+        self.subtitle = subtitle
+        self.content = content()
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            VStack(alignment: .leading, spacing: 5) {
+                Text(title)
+                    .font(.title2.weight(.semibold))
+                Text(subtitle)
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            Divider()
+
+            VStack(alignment: .leading, spacing: 14) {
+                content
+            }
+            .textFieldStyle(.roundedBorder)
+            .controlSize(.large)
+        }
+        .padding(22)
+        .background(
+            RoundedRectangle(cornerRadius: 8)
+                .fill(Color(nsColor: .controlBackgroundColor).opacity(0.58))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(Color(nsColor: .separatorColor).opacity(0.38), lineWidth: 0.5)
+        )
+    }
+}
+
+private struct TranslationServiceDetail: View {
+    let selectedService: TranslationServiceKind
+    @Bindable var settingsStore: SettingsStore
+    @Binding var apiKey: String
+    @Binding var apiKeyStatus: String
+    @Binding var feishuWebhookURL: String
+    @Binding var feishuStatus: String
+    let isTestingFeishu: Bool
+    let keychain: KeychainStore
+    let saveAPIKey: () -> Void
+    let deleteAPIKey: () -> Void
+    let applyDeepSeek: (String) -> Void
+    let testFeishuConnection: () -> Void
+
+    var body: some View {
+        switch selectedService {
+        case .deepSeek:
+            SettingsDetailSurface(title: "DeepSeek 翻译", subtitle: "推荐默认服务，兼容 OpenAI Chat Completions 请求格式。") {
+                HStack {
+                    Button("DeepSeek V4 Flash") {
+                        applyDeepSeek("deepseek-v4-flash")
+                    }
+                    Button("DeepSeek V4 Pro") {
+                        applyDeepSeek("deepseek-v4-pro")
+                    }
+                }
+                TextField("模型", text: $settingsStore.settings.openAIModel)
+                TextField(
+                    "接口地址",
+                    text: Binding(
+                        get: { settingsStore.settings.openAIBaseURL.absoluteString },
+                        set: { value in
+                            if let url = URL(string: value) {
+                                settingsStore.settings.openAIBaseURL = url
+                            }
+                        }
+                    )
+                )
+                apiKeyFields
+                Text("接口地址填 https://api.deepseek.com 即可，程序会自动补全 /chat/completions。")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        case .openAICompatible:
+            SettingsDetailSurface(title: "OpenAI 兼容服务", subtitle: "适合接入 OpenAI、硅基流动或其他兼容 Chat Completions 的服务。") {
+                Button("切换为 OpenAI 默认") {
+                    settingsStore.settings.selectedEngine = .openAI
+                    settingsStore.settings.openAIModel = AppSettings.openAIModel
+                    settingsStore.settings.openAIBaseURL = AppSettings.openAIBaseURL
+                }
+                TextField("模型", text: $settingsStore.settings.openAIModel)
+                TextField(
+                    "接口地址",
+                    text: Binding(
+                        get: { settingsStore.settings.openAIBaseURL.absoluteString },
+                        set: { value in
+                            if let url = URL(string: value) {
+                                settingsStore.settings.openAIBaseURL = url
+                            }
+                        }
+                    )
+                )
+                apiKeyFields
+                Text("如果服务要求完整路径，可直接填写 /v1/chat/completions；否则程序会自动拼接。")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        case .system:
+            SettingsDetailSurface(title: "系统翻译", subtitle: "使用 Apple Translation。macOS 15+ 可启用，当前构建会自动隐藏不可用能力。") {
+#if HAS_APPLE_TRANSLATION
+                Button("切换为 Apple 翻译") {
+                    settingsStore.settings.selectedEngine = .apple
+                }
+                Text("可用：系统会按需下载翻译模型。")
+                    .foregroundStyle(.secondary)
+#else
+                Label("当前 macOS 14 构建不可用", systemImage: "exclamationmark.triangle.fill")
+                    .foregroundStyle(.orange)
+                Text("升级到 macOS 15+ 并使用支持 Translation Framework 的 Xcode 构建后可启用。")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+#endif
+            }
+        case .feishu:
+            SettingsDetailSurface(title: "飞书通知", subtitle: "把测试消息或后续自动化摘要发送到飞书群机器人。") {
+                SecureField("飞书群机器人 Webhook", text: $feishuWebhookURL)
+                HStack {
+                    Button("保存 Webhook") {
+                        do {
+                            try keychain.saveAPIKey(feishuWebhookURL.trimmedForUI, account: "feishuWebhook")
+                            feishuStatus = "已保存"
+                        } catch {
+                            feishuStatus = error.localizedDescription
+                        }
+                    }
+                    Button("删除 Webhook") {
+                        do {
+                            try keychain.deleteAPIKey(account: "feishuWebhook")
+                            feishuWebhookURL = ""
+                            feishuStatus = "已删除"
+                        } catch {
+                            feishuStatus = error.localizedDescription
+                        }
+                    }
+                    Button(isTestingFeishu ? "发送中..." : "发送测试消息") {
+                        testFeishuConnection()
+                    }
+                    .disabled(isTestingFeishu || feishuWebhookURL.trimmedForUI.isEmpty)
+                    Text(feishuStatus)
+                        .foregroundStyle(.secondary)
+                }
+                Text("Webhook 会保存在 macOS Keychain，不写入 UserDefaults。")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    private var apiKeyFields: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            SecureField("API Key", text: $apiKey)
+            HStack {
+                Button("保存 API Key", action: saveAPIKey)
+                Button("删除 API Key", action: deleteAPIKey)
+                Text(apiKeyStatus)
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+}
+
+private struct StatusLine: View {
+    let title: String
+    let isOn: Bool
+
+    var body: some View {
+        HStack {
+            Label(title, systemImage: isOn ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
+                .foregroundStyle(isOn ? .green : .orange)
+            Spacer()
+            Text(isOn ? "已生效" : "未生效")
+                .foregroundStyle(.secondary)
+        }
+    }
+}
+
+private extension View {
+    func serviceListBackground() -> some View {
+        self
+            .frame(minHeight: 420, alignment: .top)
+            .background(
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(Color(nsColor: .controlBackgroundColor).opacity(0.56))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 8)
+                    .stroke(Color(nsColor: .separatorColor).opacity(0.36), lineWidth: 0.5)
             )
     }
 }
@@ -1091,6 +1736,70 @@ private struct PermissionStatusRow: View {
             Spacer()
             Button(actionTitle, action: action)
         }
+    }
+}
+
+private struct FeishuWebhookClient {
+    func send(text: String, webhookURL: String) async throws {
+        guard let url = URL(string: webhookURL),
+              let scheme = url.scheme,
+              ["https", "http"].contains(scheme.lowercased()) else {
+            throw KUNError.invalidResponse
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = try JSONEncoder().encode(
+            FeishuTextMessage(
+                msgType: "text",
+                content: .init(text: text)
+            )
+        )
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard let http = response as? HTTPURLResponse,
+              (200..<300).contains(http.statusCode) else {
+            throw KUNError.invalidResponse
+        }
+
+        if let result = try? JSONDecoder().decode(FeishuWebhookResponse.self, from: data),
+           let code = result.code,
+           code != 0 {
+            throw KUNError.translationUnavailable(result.message ?? "飞书 Webhook 返回错误。")
+        }
+    }
+}
+
+private struct FeishuTextMessage: Encodable {
+    let msgType: String
+    let content: Content
+
+    enum CodingKeys: String, CodingKey {
+        case msgType = "msg_type"
+        case content
+    }
+
+    struct Content: Encodable {
+        let text: String
+    }
+}
+
+private struct FeishuWebhookResponse: Decodable {
+    let code: Int?
+    let message: String?
+
+    enum CodingKeys: String, CodingKey {
+        case code
+        case message
+        case msg
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        code = try container.decodeIfPresent(Int.self, forKey: .code)
+        message = try container.decodeIfPresent(String.self, forKey: .message)
+            ?? container.decodeIfPresent(String.self, forKey: .msg)
     }
 }
 
