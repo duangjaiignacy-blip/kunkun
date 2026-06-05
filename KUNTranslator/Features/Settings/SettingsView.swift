@@ -34,44 +34,43 @@ struct SettingsView: View {
             AppBackdrop()
             HStack(spacing: 0) {
                 sidebar
-                    .frame(width: 230)
+                    .frame(width: 250)
                 Rectangle()
-                    .fill(Color(nsColor: .separatorColor).opacity(0.45))
+                    .fill(KUNPalette.line.opacity(0.72))
                     .frame(width: 1)
                 content
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .background(Color(nsColor: .windowBackgroundColor).opacity(0.72))
+                    .background(KUNPalette.canvas.opacity(0.78))
             }
         }
-        .frame(minWidth: 900, minHeight: 620)
+        .frame(minWidth: 1040, minHeight: 680)
         .task {
-            apiKey = (try? keychain.readAPIKey()) ?? ""
-            feishuWebhookURL = (try? keychain.readAPIKey(account: "feishuWebhook")) ?? ""
+            await loadStoredSecrets()
             await loadHistory()
             await loadNotes()
         }
     }
 
     private var sidebar: some View {
-        VStack(alignment: .leading, spacing: 20) {
+        VStack(alignment: .leading, spacing: 18) {
             HStack(spacing: 12) {
                 ZStack {
                     RoundedRectangle(cornerRadius: 8)
                         .fill(LinearGradient(
-                            colors: [Color.teal.opacity(0.95), Color.blue.opacity(0.9)],
+                            colors: [KUNPalette.mint, KUNPalette.sky],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         ))
                     Image(systemName: "globe.asia.australia.fill")
                         .font(.system(size: 20, weight: .semibold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(KUNPalette.ink)
                 }
                 .frame(width: 40, height: 40)
 
                 VStack(alignment: .leading, spacing: 3) {
-                    Text("KUN Translator")
+                    Text("困困翻译")
                         .font(.title2.weight(.semibold))
-                    Text("划词翻译 / OCR / 笔记")
+                    Text("Translate anything")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -132,7 +131,7 @@ struct SettingsView: View {
         }
         .padding(.horizontal, 18)
         .padding(.bottom, 18)
-        .background(Color(nsColor: .controlBackgroundColor).opacity(0.88))
+        .background(KUNPalette.sidebar)
     }
 
     @ViewBuilder
@@ -155,26 +154,24 @@ struct SettingsView: View {
 
     private var historyWorkspace: some View {
         VStack(spacing: 0) {
-            workspaceHeader(
-                title: "翻译记录",
-                subtitle: "近期捕获的原文、译文、音标和上下文。"
-            ) {
-                Button {
-                    Task { await loadHistory() }
-                } label: {
-                    Label("刷新", systemImage: "arrow.clockwise")
-                }
-                Button(role: .destructive) {
+            HomeHeroHeader(
+                historyCount: history.count,
+                noteCount: notes.count,
+                engine: settingsStore.settings.selectedEngine.displayName,
+                accessibilityOn: permissionManager.accessibilityGranted,
+                screenOn: permissionManager.screenRecordingGranted,
+                onRefresh: { Task { await loadHistory() } },
+                onClear: {
                     Task {
                         try? await historyRepository.clear()
                         selectedHistoryID = nil
                         await loadHistory()
                     }
-                } label: {
-                    Label("清空", systemImage: "trash")
-                }
-            }
-            .buttonStyle(HeaderActionButtonStyle())
+                },
+                onOpenOCR: { section = .ocr },
+                onOpenSpeech: { section = .general },
+                onOpenAI: { section = .services }
+            )
 
             HStack(spacing: 0) {
                 VStack(spacing: 12) {
@@ -203,10 +200,10 @@ struct SettingsView: View {
                     }
                 }
                 .frame(width: 390)
-                .background(Color(nsColor: .controlBackgroundColor).opacity(0.24))
+                .background(KUNPalette.surface.opacity(0.34))
 
                 Rectangle()
-                    .fill(Color(nsColor: .separatorColor).opacity(0.45))
+                    .fill(KUNPalette.line.opacity(0.72))
                     .frame(width: 1)
 
                 historyDetail
@@ -315,10 +312,10 @@ struct SettingsView: View {
                     }
                 }
                 .frame(width: 350)
-                .background(Color(nsColor: .controlBackgroundColor).opacity(0.24))
+                .background(KUNPalette.surface.opacity(0.34))
 
                 Rectangle()
-                    .fill(Color(nsColor: .separatorColor).opacity(0.45))
+                    .fill(KUNPalette.line.opacity(0.72))
                     .frame(width: 1)
 
                 noteEditor
@@ -355,11 +352,11 @@ struct SettingsView: View {
                 .padding(18)
                 .background(
                     RoundedRectangle(cornerRadius: 8)
-                        .fill(Color(nsColor: .textBackgroundColor).opacity(0.78))
+                        .fill(KUNPalette.surface.opacity(0.82))
                 )
                 .overlay(
                     RoundedRectangle(cornerRadius: 8)
-                        .stroke(Color(nsColor: .separatorColor).opacity(0.75), lineWidth: 0.5)
+                        .stroke(.white.opacity(0.78), lineWidth: 0.8)
                 )
         }
         .padding(30)
@@ -425,7 +422,7 @@ struct SettingsView: View {
             }
             .padding(28)
         }
-        .background(Color(nsColor: .windowBackgroundColor).opacity(0.42))
+        .background(KUNPalette.canvas.opacity(0.78))
     }
 
     private var servicesWorkspace: some View {
@@ -463,7 +460,7 @@ struct SettingsView: View {
             }
             .padding(28)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-            .background(Color(nsColor: .windowBackgroundColor).opacity(0.42))
+            .background(KUNPalette.canvas.opacity(0.78))
         }
     }
 
@@ -482,13 +479,11 @@ struct SettingsView: View {
                             systemImage: service.systemImage,
                             isBuiltIn: service.isBuiltIn,
                             isOn: serviceIsOn(service),
-                            isSelected: selectedService == service
+                            isSelected: selectedService == service,
+                            tone: service.tone
                         )
                     }
                     .buttonStyle(.plain)
-                    if service != TranslationServiceKind.allCases.last {
-                        Divider().padding(.leading, 58)
-                    }
                 }
                 Spacer(minLength: 0)
             }
@@ -501,16 +496,17 @@ struct SettingsView: View {
                     systemImage: "viewfinder",
                     isBuiltIn: true,
                     isOn: true,
-                    isSelected: true
+                    isSelected: true,
+                    tone: .sky
                 )
-                Divider().padding(.leading, 58)
                 ServiceListRow(
                     title: "ScreenCaptureKit",
                     subtitle: "区域截图捕获",
                     systemImage: "rectangle.dashed",
                     isBuiltIn: true,
                     isOn: permissionManager.screenRecordingGranted,
-                    isSelected: false
+                    isSelected: false,
+                    tone: .mint
                 )
                 Spacer(minLength: 0)
             }
@@ -523,7 +519,8 @@ struct SettingsView: View {
                     systemImage: "speaker.wave.2",
                     isBuiltIn: true,
                     isOn: true,
-                    isSelected: true
+                    isSelected: true,
+                    tone: .lemon
                 )
                 Spacer(minLength: 0)
             }
@@ -622,7 +619,7 @@ struct SettingsView: View {
             }
             .padding(28)
         }
-        .background(Color(nsColor: .windowBackgroundColor).opacity(0.42))
+        .background(KUNPalette.canvas.opacity(0.78))
     }
 
     private var generalWorkspace: some View {
@@ -697,17 +694,17 @@ struct SettingsView: View {
             }
             .padding(28)
         }
-        .background(Color(nsColor: .windowBackgroundColor).opacity(0.42))
+        .background(KUNPalette.canvas.opacity(0.78))
     }
 
     private func workspaceHero(title: String, subtitle: String, systemImage: String, badges: [String]) -> some View {
         HStack(alignment: .center, spacing: 16) {
             ZStack {
                 RoundedRectangle(cornerRadius: 8)
-                    .fill(Color.accentColor.opacity(0.14))
+                    .fill(KUNPalette.mint.opacity(0.54))
                 Image(systemName: systemImage)
                     .font(.system(size: 24, weight: .semibold))
-                    .foregroundStyle(Color.accentColor)
+                    .foregroundStyle(KUNPalette.ink)
             }
             .frame(width: 54, height: 54)
 
@@ -722,14 +719,15 @@ struct SettingsView: View {
             Spacer()
         }
         .padding(20)
-        .background(
-            RoundedRectangle(cornerRadius: 8)
-                .fill(.ultraThinMaterial)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 8)
-                .stroke(Color(nsColor: .separatorColor).opacity(0.42), lineWidth: 0.5)
-        )
+            .background(
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(KUNPalette.surface.opacity(0.86))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 8)
+                    .stroke(.white.opacity(0.80), lineWidth: 0.8)
+            )
+            .shadow(color: .black.opacity(0.035), radius: 18, x: 0, y: 10)
     }
 
     private func saveAPIKey() {
@@ -764,6 +762,18 @@ struct SettingsView: View {
         }
     }
 
+    private func loadStoredSecrets() async {
+        let store = keychain
+        let values = await Task.detached(priority: .userInitiated) {
+            (
+                (try? store.readAPIKey()) ?? "",
+                (try? store.readAPIKey(account: "feishuWebhook")) ?? ""
+            )
+        }.value
+        apiKey = values.0
+        feishuWebhookURL = values.1
+    }
+
     private func workspaceHeader<Actions: View>(
         title: String,
         subtitle: String,
@@ -776,10 +786,10 @@ struct SettingsView: View {
         }
         .padding(.horizontal, 28)
         .padding(.vertical, 20)
-        .background(.ultraThinMaterial)
+        .background(KUNPalette.surface.opacity(0.74))
         .overlay(alignment: .bottom) {
             Rectangle()
-                .fill(Color(nsColor: .separatorColor).opacity(0.5))
+                .fill(KUNPalette.line.opacity(0.56))
                 .frame(height: 1)
         }
     }
@@ -1107,27 +1117,229 @@ private enum TranslationServiceKind: CaseIterable, Identifiable {
         case .openAICompatible, .feishu: false
         }
     }
+
+    var tone: SoftServiceTone {
+        switch self {
+        case .deepSeek: .mint
+        case .openAICompatible: .sky
+        case .system: .peach
+        case .feishu: .lemon
+        }
+    }
+}
+
+private enum SoftServiceTone {
+    case mint
+    case sky
+    case peach
+    case lemon
+
+    var background: Color {
+        switch self {
+        case .mint: KUNPalette.mint.opacity(0.46)
+        case .sky: KUNPalette.sky.opacity(0.42)
+        case .peach: KUNPalette.peach.opacity(0.44)
+        case .lemon: KUNPalette.lemon.opacity(0.52)
+        }
+    }
+
+    var foreground: Color {
+        switch self {
+        case .mint: Color(red: 0.08, green: 0.39, blue: 0.34)
+        case .sky: Color(red: 0.12, green: 0.30, blue: 0.45)
+        case .peach: Color(red: 0.55, green: 0.26, blue: 0.13)
+        case .lemon: Color(red: 0.42, green: 0.38, blue: 0.08)
+        }
+    }
+}
+
+private enum KUNPalette {
+    static let canvas = Color(red: 0.965, green: 0.958, blue: 0.936)
+    static let sidebar = Color(red: 0.925, green: 0.925, blue: 0.905)
+    static let surface = Color(red: 1.0, green: 0.992, blue: 0.968)
+    static let ink = Color(red: 0.045, green: 0.043, blue: 0.055)
+    static let line = Color(red: 0.80, green: 0.79, blue: 0.74)
+    static let mint = Color(red: 0.78, green: 0.90, blue: 0.88)
+    static let sky = Color(red: 0.79, green: 0.89, blue: 0.92)
+    static let peach = Color(red: 0.98, green: 0.86, blue: 0.76)
+    static let lemon = Color(red: 0.94, green: 0.96, blue: 0.74)
+}
+
+private struct HomeHeroHeader: View {
+    let historyCount: Int
+    let noteCount: Int
+    let engine: String
+    let accessibilityOn: Bool
+    let screenOn: Bool
+    let onRefresh: () -> Void
+    let onClear: () -> Void
+    let onOpenOCR: () -> Void
+    let onOpenSpeech: () -> Void
+    let onOpenAI: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            HStack(alignment: .center, spacing: 22) {
+                VStack(alignment: .leading, spacing: 12) {
+                    HStack(spacing: 8) {
+                        StatusPill(title: engine, isOn: true)
+                        StatusPill(title: accessibilityOn ? "辅助功能已生效" : "需要辅助功能", isOn: accessibilityOn)
+                        StatusPill(title: screenOn ? "OCR 可用" : "OCR 需授权", isOn: screenOn)
+                    }
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Let's translate")
+                            .font(.system(size: 34, weight: .semibold, design: .rounded))
+                            .foregroundStyle(KUNPalette.ink)
+                        Text("anything with ease")
+                            .font(.system(size: 28, weight: .regular, design: .rounded))
+                            .foregroundStyle(.secondary)
+                    }
+                    Text("划词、截图、朗读和 AI 总结都在这里开始。你的历史记录会自动沉淀成可复习的笔记。")
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(2)
+                }
+
+                Spacer(minLength: 12)
+
+                ZStack {
+                    Image("AIAura")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 176, height: 176)
+                        .opacity(0.92)
+                    Circle()
+                        .fill(.white.opacity(0.74))
+                        .frame(width: 64, height: 64)
+                    Image(systemName: "sparkles")
+                        .font(.system(size: 24, weight: .bold))
+                        .foregroundStyle(KUNPalette.ink)
+                }
+                .frame(width: 190, height: 172)
+            }
+
+            HStack(spacing: 12) {
+                HeroActionTile(title: "Camera", subtitle: "截图 OCR 翻译", systemImage: "camera.fill", tone: .sky, action: onOpenOCR)
+                HeroActionTile(title: "Voice", subtitle: "朗读与发音", systemImage: "mic.fill", tone: .lemon, action: onOpenSpeech)
+                HeroActionTile(title: "Translate AI", subtitle: "模型与增强", systemImage: "character.bubble.fill", tone: .peach, action: onOpenAI)
+                Spacer(minLength: 0)
+                VStack(alignment: .trailing, spacing: 8) {
+                    HStack(spacing: 10) {
+                        SidebarMetric(title: "记录", value: "\(historyCount)", systemImage: "text.book.closed")
+                            .frame(width: 86)
+                        SidebarMetric(title: "笔记", value: "\(noteCount)", systemImage: "note.text")
+                            .frame(width: 86)
+                    }
+                    HStack {
+                        Button(action: onRefresh) {
+                            Label("刷新", systemImage: "arrow.clockwise")
+                        }
+                        Button(role: .destructive, action: onClear) {
+                            Label("清空", systemImage: "trash")
+                        }
+                    }
+                    .buttonStyle(HeaderActionButtonStyle())
+                }
+            }
+        }
+        .padding(24)
+        .background(
+            ZStack(alignment: .topTrailing) {
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(KUNPalette.surface)
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(LinearGradient(
+                        colors: [KUNPalette.lemon.opacity(0.48), .white.opacity(0.18), KUNPalette.sky.opacity(0.26)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    ))
+            }
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(.white.opacity(0.82), lineWidth: 1)
+        )
+        .shadow(color: .black.opacity(0.06), radius: 24, x: 0, y: 14)
+        .padding(24)
+        .padding(.bottom, -6)
+        .background(KUNPalette.canvas)
+    }
+}
+
+private struct HeroActionTile: View {
+    let title: String
+    let subtitle: String
+    let systemImage: String
+    let tone: SoftServiceTone
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 12) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(.white.opacity(0.86))
+                    Image(systemName: systemImage)
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundStyle(KUNPalette.ink)
+                }
+                .frame(width: 42, height: 42)
+
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(title)
+                        .font(.headline.weight(.semibold))
+                        .foregroundStyle(KUNPalette.ink)
+                    Text(subtitle)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                Spacer(minLength: 12)
+
+                Image(systemName: "arrow.right")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(tone.foreground)
+                    .padding(8)
+                    .background(Circle().fill(.white.opacity(0.62)))
+            }
+            .padding(12)
+            .frame(width: 190, height: 72)
+            .background(
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(tone.background)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 8)
+                    .stroke(.white.opacity(0.76), lineWidth: 1)
+            )
+        }
+        .buttonStyle(.plain)
+    }
 }
 
 private struct AppBackdrop: View {
     var body: some View {
         ZStack(alignment: .topTrailing) {
-            Color(nsColor: .windowBackgroundColor)
+            KUNPalette.canvas
             LinearGradient(
                 colors: [
-                    Color.teal.opacity(0.10),
-                    Color.indigo.opacity(0.045),
-                    Color.orange.opacity(0.035),
+                    KUNPalette.lemon.opacity(0.34),
+                    KUNPalette.sky.opacity(0.20),
+                    KUNPalette.peach.opacity(0.16),
                     Color.clear
                 ],
                 startPoint: .topLeading,
                 endPoint: .center
             )
             .ignoresSafeArea()
-            Rectangle()
-                .fill(Color(nsColor: .separatorColor).opacity(0.18))
-                .frame(width: 1)
-                .padding(.trailing, 22)
+            Image("AIAura")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 430, height: 430)
+                .opacity(0.16)
+                .blur(radius: 1.5)
+                .padding(.top, 36)
+                .padding(.trailing, 40)
         }
     }
 }
@@ -1141,7 +1353,7 @@ private struct SidebarMetric: View {
         VStack(alignment: .leading, spacing: 8) {
             Image(systemName: systemImage)
                 .font(.caption.weight(.bold))
-                .foregroundStyle(Color.accentColor)
+                .foregroundStyle(KUNPalette.ink)
             VStack(alignment: .leading, spacing: 2) {
                 Text(value)
                     .font(.headline.weight(.semibold))
@@ -1155,11 +1367,11 @@ private struct SidebarMetric: View {
         .padding(.vertical, 10)
         .background(
             RoundedRectangle(cornerRadius: 8)
-                .fill(Color(nsColor: .textBackgroundColor).opacity(0.55))
+                .fill(.white.opacity(0.58))
         )
         .overlay(
             RoundedRectangle(cornerRadius: 8)
-                .stroke(Color(nsColor: .separatorColor).opacity(0.45), lineWidth: 0.5)
+                .stroke(.white.opacity(0.78), lineWidth: 0.8)
         )
     }
 }
@@ -1186,11 +1398,11 @@ private struct PermissionMiniCard: View {
         .padding(10)
         .background(
             RoundedRectangle(cornerRadius: 8)
-                .fill((isGranted ? Color.green : Color.orange).opacity(0.09))
+                .fill((isGranted ? KUNPalette.mint : KUNPalette.peach).opacity(0.45))
         )
         .overlay(
             RoundedRectangle(cornerRadius: 8)
-                .stroke((isGranted ? Color.green : Color.orange).opacity(0.20), lineWidth: 0.5)
+                .stroke(.white.opacity(0.68), lineWidth: 0.8)
         )
     }
 }
@@ -1207,7 +1419,7 @@ private struct StatusPill: View {
             .padding(.vertical, 6)
             .background(
                 Capsule()
-                    .fill((isOn ? Color.green : Color.orange).opacity(0.11))
+                    .fill((isOn ? KUNPalette.mint : KUNPalette.peach).opacity(0.58))
             )
     }
 }
@@ -1225,11 +1437,11 @@ private struct MetaChip: View {
             .padding(.vertical, 6)
             .background(
                 Capsule()
-                    .fill(Color(nsColor: .textBackgroundColor).opacity(0.62))
+                    .fill(.white.opacity(0.62))
             )
             .overlay(
                 Capsule()
-                    .stroke(Color(nsColor: .separatorColor).opacity(0.44), lineWidth: 0.5)
+                    .stroke(.white.opacity(0.76), lineWidth: 0.6)
             )
     }
 }
@@ -1241,15 +1453,16 @@ private struct ServiceListRow: View {
     let isBuiltIn: Bool
     let isOn: Bool
     let isSelected: Bool
+    let tone: SoftServiceTone
 
     var body: some View {
         HStack(spacing: 12) {
             ZStack {
                 RoundedRectangle(cornerRadius: 6)
-                    .fill(isSelected ? Color.accentColor.opacity(0.16) : Color(nsColor: .textBackgroundColor).opacity(0.72))
+                    .fill(.white.opacity(isSelected ? 0.92 : 0.70))
                 Image(systemName: systemImage)
                     .font(.system(size: 16, weight: .semibold))
-                    .foregroundStyle(isSelected ? Color.accentColor : .secondary)
+                    .foregroundStyle(isSelected ? tone.foreground : .secondary)
             }
             .frame(width: 34, height: 34)
 
@@ -1267,10 +1480,10 @@ private struct ServiceListRow: View {
             if isBuiltIn {
                 Text("内置")
                     .font(.caption2.weight(.semibold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(tone.foreground)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
-                    .background(Capsule().fill(Color.teal))
+                    .background(Capsule().fill(.white.opacity(0.68)))
             }
 
             Toggle("", isOn: .constant(isOn))
@@ -1279,9 +1492,18 @@ private struct ServiceListRow: View {
                 .allowsHitTesting(false)
         }
         .padding(.horizontal, 16)
-        .padding(.vertical, 13)
-        .background(isSelected ? Color.accentColor.opacity(0.08) : Color.clear)
-        .contentShape(Rectangle())
+        .padding(.vertical, 14)
+        .background(
+            RoundedRectangle(cornerRadius: 8)
+                .fill(isSelected ? tone.background : KUNPalette.surface.opacity(0.64))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(isSelected ? .white.opacity(0.86) : KUNPalette.line.opacity(0.38), lineWidth: 0.8)
+        )
+        .contentShape(RoundedRectangle(cornerRadius: 8))
+        .padding(.horizontal, 10)
+        .padding(.vertical, 5)
     }
 }
 
@@ -1318,12 +1540,13 @@ private struct SettingsDetailSurface<Content: View>: View {
         .padding(22)
         .background(
             RoundedRectangle(cornerRadius: 8)
-                .fill(Color(nsColor: .controlBackgroundColor).opacity(0.58))
+                .fill(KUNPalette.surface.opacity(0.84))
         )
         .overlay(
             RoundedRectangle(cornerRadius: 8)
-                .stroke(Color(nsColor: .separatorColor).opacity(0.38), lineWidth: 0.5)
+                .stroke(.white.opacity(0.78), lineWidth: 0.8)
         )
+        .shadow(color: .black.opacity(0.035), radius: 18, x: 0, y: 10)
     }
 }
 
@@ -1477,14 +1700,16 @@ private extension View {
     func serviceListBackground() -> some View {
         self
             .frame(minHeight: 420, alignment: .top)
+            .padding(.vertical, 8)
             .background(
                 RoundedRectangle(cornerRadius: 8)
-                    .fill(Color(nsColor: .controlBackgroundColor).opacity(0.56))
+                    .fill(KUNPalette.surface.opacity(0.62))
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 8)
-                    .stroke(Color(nsColor: .separatorColor).opacity(0.36), lineWidth: 0.5)
+                    .stroke(.white.opacity(0.76), lineWidth: 0.8)
             )
+            .shadow(color: .black.opacity(0.03), radius: 16, x: 0, y: 10)
     }
 }
 
@@ -1494,16 +1719,16 @@ private struct SidebarButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(.callout.weight(isSelected ? .semibold : .regular))
-            .foregroundStyle(isSelected ? Color.accentColor : Color.primary)
+            .foregroundStyle(isSelected ? KUNPalette.ink : Color.primary)
             .padding(.horizontal, 12)
             .padding(.vertical, 9)
             .background(
                 RoundedRectangle(cornerRadius: 8)
-                    .fill(isSelected ? Color.accentColor.opacity(0.16) : Color.clear)
+                    .fill(isSelected ? KUNPalette.lemon.opacity(0.68) : Color.clear)
             )
             .overlay(alignment: .leading) {
                 RoundedRectangle(cornerRadius: 2)
-                    .fill(isSelected ? Color.accentColor : Color.clear)
+                    .fill(isSelected ? KUNPalette.ink : Color.clear)
                     .frame(width: 3, height: 18)
                     .padding(.leading, 2)
             }
@@ -1520,11 +1745,11 @@ private struct HeaderActionButtonStyle: ButtonStyle {
             .padding(.vertical, 7)
             .background(
                 RoundedRectangle(cornerRadius: 8)
-                    .fill(Color(nsColor: .textBackgroundColor).opacity(configuration.isPressed ? 0.56 : 0.78))
+                    .fill(configuration.isPressed ? KUNPalette.lemon.opacity(0.62) : .white.opacity(0.72))
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 8)
-                    .stroke(Color(nsColor: .separatorColor).opacity(0.65), lineWidth: 0.5)
+                    .stroke(.white.opacity(0.82), lineWidth: 0.8)
             )
     }
 }
@@ -1535,7 +1760,7 @@ private struct HistoryRow: View {
     var body: some View {
         HStack(alignment: .top, spacing: 10) {
             RoundedRectangle(cornerRadius: 2)
-                .fill(Color.accentColor.opacity(0.72))
+                .fill(KUNPalette.sky.opacity(0.94))
                 .frame(width: 3)
             VStack(alignment: .leading, spacing: 7) {
                 HStack {
@@ -1559,11 +1784,11 @@ private struct HistoryRow: View {
         .padding(12)
         .background(
             RoundedRectangle(cornerRadius: 8)
-                .fill(Color(nsColor: .textBackgroundColor).opacity(0.58))
+                .fill(KUNPalette.surface.opacity(0.74))
         )
         .overlay(
             RoundedRectangle(cornerRadius: 8)
-                .stroke(Color(nsColor: .separatorColor).opacity(0.36), lineWidth: 0.5)
+                .stroke(.white.opacity(0.76), lineWidth: 0.8)
         )
     }
 }
@@ -1591,11 +1816,11 @@ private struct NoteRow: View {
         .padding(12)
         .background(
             RoundedRectangle(cornerRadius: 8)
-                .fill(Color(nsColor: .textBackgroundColor).opacity(0.58))
+                .fill(KUNPalette.surface.opacity(0.74))
         )
         .overlay(
             RoundedRectangle(cornerRadius: 8)
-                .stroke(Color(nsColor: .separatorColor).opacity(0.36), lineWidth: 0.5)
+                .stroke(.white.opacity(0.76), lineWidth: 0.8)
         )
     }
 }
@@ -1623,11 +1848,11 @@ private struct TextBlock: View {
         .padding(16)
         .background(
             RoundedRectangle(cornerRadius: 8)
-                .fill(Color(nsColor: secondary ? .controlBackgroundColor : .textBackgroundColor).opacity(0.72))
+                .fill((secondary ? KUNPalette.mint : KUNPalette.surface).opacity(secondary ? 0.36 : 0.82))
         )
         .overlay(
             RoundedRectangle(cornerRadius: 8)
-                .stroke(Color(nsColor: .separatorColor).opacity(0.45), lineWidth: 0.5)
+                .stroke(.white.opacity(0.78), lineWidth: 0.8)
         )
     }
 }
@@ -1652,7 +1877,7 @@ private struct EmptyStateView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(24)
-        .background(Color(nsColor: .controlBackgroundColor).opacity(0.18))
+        .background(KUNPalette.surface.opacity(0.32))
     }
 }
 
@@ -1679,11 +1904,11 @@ private struct SearchField: View {
         .padding(.vertical, 8)
         .background(
             RoundedRectangle(cornerRadius: 8)
-                .fill(Color(nsColor: .textBackgroundColor).opacity(0.82))
+                .fill(.white.opacity(0.78))
         )
         .overlay(
             RoundedRectangle(cornerRadius: 8)
-                .stroke(Color(nsColor: .separatorColor).opacity(0.55), lineWidth: 0.5)
+                .stroke(.white.opacity(0.82), lineWidth: 0.8)
         )
     }
 }
@@ -1713,11 +1938,11 @@ private struct SettingsPanel<Content: View>: View {
         .padding(18)
         .background(
             RoundedRectangle(cornerRadius: 8)
-                .fill(Color(nsColor: .controlBackgroundColor).opacity(0.58))
+                .fill(KUNPalette.surface.opacity(0.78))
         )
         .overlay(
             RoundedRectangle(cornerRadius: 8)
-                .stroke(Color(nsColor: .separatorColor).opacity(0.42), lineWidth: 0.5)
+                .stroke(.white.opacity(0.78), lineWidth: 0.8)
         )
         .frame(maxWidth: .infinity, alignment: .topLeading)
     }
