@@ -39,13 +39,13 @@ final class SettingsWindowController {
                 permissionManager: permissionManager
             )
             let window = NSWindow(
-                contentRect: CGRect(x: 0, y: 0, width: 1080, height: 720),
+                contentRect: CGRect(x: 0, y: 0, width: 1280, height: 760),
                 styleMask: [.titled, .closable, .miniaturizable, .resizable],
                 backing: .buffered,
                 defer: false
             )
             window.title = "困困翻译助手"
-            window.minSize = CGSize(width: 900, height: 620)
+            window.minSize = CGSize(width: 1120, height: 700)
             window.contentView = NSHostingView(rootView: view)
             window.center()
             self.window = window

@@ -1294,9 +1294,11 @@ private struct HomeHeroHeader: View {
 
             HStack(spacing: 12) {
                 HeroActionTile(title: "Camera", subtitle: "截图 OCR 翻译", systemImage: "camera.fill", tone: .sky, action: onOpenOCR)
+                    .frame(minWidth: 210, maxWidth: .infinity)
                 HeroActionTile(title: "Voice", subtitle: "朗读与发音", systemImage: "mic.fill", tone: .lemon, action: onOpenSpeech)
+                    .frame(minWidth: 210, maxWidth: .infinity)
                 HeroActionTile(title: "Translate AI", subtitle: "模型与增强", systemImage: "character.bubble.fill", tone: .peach, action: onOpenAI)
-                Spacer(minLength: 0)
+                    .frame(minWidth: 230, maxWidth: .infinity)
                 VStack(alignment: .trailing, spacing: 8) {
                     HStack(spacing: 10) {
                         SidebarMetric(title: "记录", value: "\(historyCount)", systemImage: "text.book.closed")
@@ -1314,6 +1316,7 @@ private struct HomeHeroHeader: View {
                     }
                     .buttonStyle(HeaderActionButtonStyle())
                 }
+                .frame(width: 194)
             }
         }
         .padding(24)
@@ -1363,10 +1366,15 @@ private struct HeroActionTile: View {
                     Text(title)
                         .font(.headline.weight(.semibold))
                         .foregroundStyle(KUNPalette.ink)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.82)
                     Text(subtitle)
                         .font(.caption)
                         .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.82)
                 }
+                .layoutPriority(1)
 
                 Spacer(minLength: 12)
 
@@ -1377,7 +1385,7 @@ private struct HeroActionTile: View {
                     .background(Circle().fill(.white.opacity(0.62)))
             }
             .padding(12)
-            .frame(width: 190, height: 72)
+            .frame(maxWidth: .infinity, minHeight: 72)
             .background(
                 RoundedRectangle(cornerRadius: 8)
                     .fill(tone.background)
