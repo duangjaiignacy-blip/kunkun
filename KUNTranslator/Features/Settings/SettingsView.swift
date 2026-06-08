@@ -205,7 +205,7 @@ struct SettingsView: View {
                     }
                 }
                 .frame(width: 390)
-                .background(KUNPalette.surface.opacity(0.34))
+                .background(KUNPalette.cardMuted.opacity(0.28))
 
                 Rectangle()
                     .fill(KUNPalette.line.opacity(0.72))
@@ -317,7 +317,7 @@ struct SettingsView: View {
                     }
                 }
                 .frame(width: 350)
-                .background(KUNPalette.surface.opacity(0.34))
+                .background(KUNPalette.cardMuted.opacity(0.28))
 
                 Rectangle()
                     .fill(KUNPalette.line.opacity(0.72))
@@ -357,11 +357,11 @@ struct SettingsView: View {
                 .padding(18)
                 .background(
                     RoundedRectangle(cornerRadius: 8)
-                        .fill(KUNPalette.surface.opacity(0.82))
+                        .fill(KUNPalette.card)
                 )
                 .overlay(
                     RoundedRectangle(cornerRadius: 8)
-                        .stroke(.white.opacity(0.78), lineWidth: 0.8)
+                        .stroke(KUNPalette.stroke.opacity(0.74), lineWidth: 0.8)
                 )
         }
         .padding(30)
@@ -730,7 +730,7 @@ struct SettingsView: View {
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 8)
-                    .stroke(.white.opacity(0.80), lineWidth: 0.8)
+                    .stroke(KUNPalette.stroke.opacity(0.72), lineWidth: 0.8)
             )
             .shadow(color: .black.opacity(0.035), radius: 18, x: 0, y: 10)
     }
@@ -791,7 +791,7 @@ struct SettingsView: View {
         }
         .padding(.horizontal, 28)
         .padding(.vertical, 20)
-        .background(KUNPalette.surface.opacity(0.74))
+        .background(KUNPalette.card.opacity(0.76))
         .overlay(alignment: .bottom) {
             Rectangle()
                 .fill(KUNPalette.line.opacity(0.56))
@@ -1169,10 +1169,10 @@ private enum SoftServiceTone {
 
     var foreground: Color {
         switch self {
-        case .mint: Color(red: 0.08, green: 0.39, blue: 0.34)
-        case .sky: Color(red: 0.12, green: 0.30, blue: 0.45)
-        case .peach: Color(red: 0.55, green: 0.26, blue: 0.13)
-        case .lemon: Color(red: 0.42, green: 0.38, blue: 0.08)
+        case .mint: KUNPalette.mintInk
+        case .sky: KUNPalette.skyInk
+        case .peach: KUNPalette.peachInk
+        case .lemon: KUNPalette.lemonInk
         }
     }
 }
@@ -1193,6 +1193,36 @@ private enum KUNPalette {
                  dark: NSColor(red: 0.145, green: 0.151, blue: 0.166, alpha: 1))
     }
 
+    static var card: Color {
+        adaptive(light: NSColor(red: 1.0, green: 0.996, blue: 0.980, alpha: 1),
+                 dark: NSColor(red: 0.165, green: 0.171, blue: 0.188, alpha: 1))
+    }
+
+    static var cardMuted: Color {
+        adaptive(light: NSColor(red: 0.965, green: 0.958, blue: 0.932, alpha: 1),
+                 dark: NSColor(red: 0.190, green: 0.198, blue: 0.218, alpha: 1))
+    }
+
+    static var control: Color {
+        adaptive(light: NSColor(red: 1.0, green: 0.998, blue: 0.986, alpha: 1),
+                 dark: NSColor(red: 0.235, green: 0.244, blue: 0.268, alpha: 1))
+    }
+
+    static var controlPressed: Color {
+        adaptive(light: NSColor(red: 0.938, green: 0.953, blue: 0.774, alpha: 1),
+                 dark: NSColor(red: 0.305, green: 0.318, blue: 0.330, alpha: 1))
+    }
+
+    static var badge: Color {
+        adaptive(light: NSColor(red: 1.0, green: 0.996, blue: 0.984, alpha: 1),
+                 dark: NSColor(red: 0.255, green: 0.266, blue: 0.292, alpha: 1))
+    }
+
+    static var auraTint: Color {
+        adaptive(light: NSColor.white,
+                 dark: NSColor(red: 0.155, green: 0.162, blue: 0.178, alpha: 1))
+    }
+
     static var ink: Color {
         adaptive(light: NSColor(red: 0.045, green: 0.043, blue: 0.055, alpha: 1),
                  dark: NSColor(red: 0.952, green: 0.945, blue: 0.918, alpha: 1))
@@ -1201,6 +1231,21 @@ private enum KUNPalette {
     static var line: Color {
         adaptive(light: NSColor(red: 0.80, green: 0.79, blue: 0.74, alpha: 1),
                  dark: NSColor(red: 0.28, green: 0.30, blue: 0.33, alpha: 1))
+    }
+
+    static var stroke: Color {
+        adaptive(light: NSColor(red: 1.0, green: 0.998, blue: 0.988, alpha: 1),
+                 dark: NSColor(red: 0.340, green: 0.355, blue: 0.392, alpha: 1))
+    }
+
+    static var success: Color {
+        adaptive(light: NSColor(red: 0.12, green: 0.76, blue: 0.28, alpha: 1),
+                 dark: NSColor(red: 0.36, green: 0.92, blue: 0.48, alpha: 1))
+    }
+
+    static var warning: Color {
+        adaptive(light: NSColor(red: 0.92, green: 0.48, blue: 0.10, alpha: 1),
+                 dark: NSColor(red: 1.0, green: 0.68, blue: 0.28, alpha: 1))
     }
 
     static var mint: Color {
@@ -1221,6 +1266,26 @@ private enum KUNPalette {
     static var lemon: Color {
         adaptive(light: NSColor(red: 0.94, green: 0.96, blue: 0.74, alpha: 1),
                  dark: NSColor(red: 0.43, green: 0.45, blue: 0.25, alpha: 1))
+    }
+
+    static var mintInk: Color {
+        adaptive(light: NSColor(red: 0.08, green: 0.39, blue: 0.34, alpha: 1),
+                 dark: NSColor(red: 0.74, green: 0.95, blue: 0.88, alpha: 1))
+    }
+
+    static var skyInk: Color {
+        adaptive(light: NSColor(red: 0.12, green: 0.30, blue: 0.45, alpha: 1),
+                 dark: NSColor(red: 0.72, green: 0.90, blue: 0.98, alpha: 1))
+    }
+
+    static var peachInk: Color {
+        adaptive(light: NSColor(red: 0.55, green: 0.26, blue: 0.13, alpha: 1),
+                 dark: NSColor(red: 1.0, green: 0.80, blue: 0.66, alpha: 1))
+    }
+
+    static var lemonInk: Color {
+        adaptive(light: NSColor(red: 0.42, green: 0.38, blue: 0.08, alpha: 1),
+                 dark: NSColor(red: 0.97, green: 0.96, blue: 0.68, alpha: 1))
     }
 
     private static func adaptive(light: NSColor, dark: NSColor) -> Color {
@@ -1281,9 +1346,9 @@ private struct HomeHeroHeader: View {
                         .scaledToFit()
                         .frame(width: 176, height: 176)
                         .opacity(colorScheme == .dark ? 0.74 : 0.92)
-                        .blendMode(colorScheme == .dark ? .multiply : .normal)
+                        .colorMultiply(KUNPalette.auraTint)
                     Circle()
-                        .fill(.white.opacity(0.74))
+                        .fill(KUNPalette.badge.opacity(0.86))
                         .frame(width: 64, height: 64)
                     Image(systemName: "sparkles")
                         .font(.system(size: 24, weight: .bold))
@@ -1326,7 +1391,7 @@ private struct HomeHeroHeader: View {
                     .fill(KUNPalette.surface)
                 RoundedRectangle(cornerRadius: 8)
                     .fill(LinearGradient(
-                        colors: [KUNPalette.lemon.opacity(0.48), .white.opacity(0.18), KUNPalette.sky.opacity(0.26)],
+                        colors: [KUNPalette.lemon.opacity(0.48), KUNPalette.card.opacity(0.18), KUNPalette.sky.opacity(0.26)],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     ))
@@ -1334,7 +1399,7 @@ private struct HomeHeroHeader: View {
         )
         .overlay(
             RoundedRectangle(cornerRadius: 8)
-                .stroke(.white.opacity(0.82), lineWidth: 1)
+                .stroke(KUNPalette.stroke.opacity(0.82), lineWidth: 1)
         )
         .shadow(color: .black.opacity(0.06), radius: 24, x: 0, y: 14)
         .padding(24)
@@ -1355,7 +1420,7 @@ private struct HeroActionTile: View {
             HStack(spacing: 12) {
                 ZStack {
                     RoundedRectangle(cornerRadius: 8)
-                        .fill(.white.opacity(0.86))
+                        .fill(KUNPalette.badge.opacity(0.88))
                     Image(systemName: systemImage)
                         .font(.system(size: 16, weight: .bold))
                         .foregroundStyle(KUNPalette.ink)
@@ -1382,7 +1447,7 @@ private struct HeroActionTile: View {
                     .font(.caption.weight(.bold))
                     .foregroundStyle(tone.foreground)
                     .padding(8)
-                    .background(Circle().fill(.white.opacity(0.62)))
+                    .background(Circle().fill(KUNPalette.badge.opacity(0.70)))
             }
             .padding(12)
             .frame(maxWidth: .infinity, minHeight: 72)
@@ -1392,7 +1457,7 @@ private struct HeroActionTile: View {
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 8)
-                    .stroke(.white.opacity(0.76), lineWidth: 1)
+                    .stroke(KUNPalette.stroke.opacity(0.70), lineWidth: 1)
             )
         }
         .buttonStyle(.plain)
@@ -1421,7 +1486,7 @@ private struct AppBackdrop: View {
                 .scaledToFit()
                 .frame(width: 430, height: 430)
                 .opacity(colorScheme == .dark ? 0.10 : 0.16)
-                .blendMode(colorScheme == .dark ? .multiply : .normal)
+                .colorMultiply(KUNPalette.auraTint)
                 .blur(radius: 1.5)
                 .padding(.top, 36)
                 .padding(.trailing, 40)
@@ -1452,11 +1517,11 @@ private struct SidebarMetric: View {
         .padding(.vertical, 10)
         .background(
             RoundedRectangle(cornerRadius: 8)
-                .fill(.white.opacity(0.58))
+                .fill(KUNPalette.cardMuted.opacity(0.72))
         )
         .overlay(
             RoundedRectangle(cornerRadius: 8)
-                .stroke(.white.opacity(0.78), lineWidth: 0.8)
+                .stroke(KUNPalette.stroke.opacity(0.70), lineWidth: 0.8)
         )
     }
 }
@@ -1470,7 +1535,7 @@ private struct PermissionMiniCard: View {
         HStack(spacing: 9) {
             Image(systemName: isGranted ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
                 .font(.callout.weight(.semibold))
-                .foregroundStyle(isGranted ? .green : .orange)
+                .foregroundStyle(isGranted ? KUNPalette.success : KUNPalette.warning)
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
                     .font(.caption.weight(.semibold))
@@ -1487,7 +1552,7 @@ private struct PermissionMiniCard: View {
         )
         .overlay(
             RoundedRectangle(cornerRadius: 8)
-                .stroke(.white.opacity(0.68), lineWidth: 0.8)
+                .stroke(KUNPalette.stroke.opacity(0.62), lineWidth: 0.8)
         )
     }
 }
@@ -1499,12 +1564,12 @@ private struct StatusPill: View {
     var body: some View {
         Label(title, systemImage: isOn ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
             .font(.caption.weight(.medium))
-            .foregroundStyle(isOn ? .green : .orange)
+            .foregroundStyle(isOn ? KUNPalette.success : KUNPalette.warning)
             .padding(.horizontal, 9)
             .padding(.vertical, 6)
             .background(
                 Capsule()
-                    .fill((isOn ? KUNPalette.mint : KUNPalette.peach).opacity(0.58))
+                    .fill((isOn ? KUNPalette.mint : KUNPalette.peach).opacity(0.46))
             )
     }
 }
@@ -1522,11 +1587,11 @@ private struct MetaChip: View {
             .padding(.vertical, 6)
             .background(
                 Capsule()
-                    .fill(.white.opacity(0.62))
+                    .fill(KUNPalette.badge.opacity(0.64))
             )
             .overlay(
                 Capsule()
-                    .stroke(.white.opacity(0.76), lineWidth: 0.6)
+                    .stroke(KUNPalette.stroke.opacity(0.62), lineWidth: 0.6)
             )
     }
 }
@@ -1544,7 +1609,7 @@ private struct ServiceListRow: View {
         HStack(spacing: 12) {
             ZStack {
                 RoundedRectangle(cornerRadius: 6)
-                    .fill(.white.opacity(isSelected ? 0.92 : 0.70))
+                    .fill(isSelected ? KUNPalette.badge.opacity(0.92) : KUNPalette.control.opacity(0.72))
                 Image(systemName: systemImage)
                     .font(.system(size: 16, weight: .semibold))
                     .foregroundStyle(isSelected ? tone.foreground : .secondary)
@@ -1568,7 +1633,7 @@ private struct ServiceListRow: View {
                     .foregroundStyle(tone.foreground)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
-                    .background(Capsule().fill(.white.opacity(0.68)))
+                    .background(Capsule().fill(KUNPalette.badge.opacity(0.68)))
             }
 
             Toggle("", isOn: .constant(isOn))
@@ -1584,7 +1649,7 @@ private struct ServiceListRow: View {
         )
         .overlay(
             RoundedRectangle(cornerRadius: 8)
-                .stroke(isSelected ? .white.opacity(0.86) : KUNPalette.line.opacity(0.38), lineWidth: 0.8)
+                .stroke(isSelected ? KUNPalette.stroke.opacity(0.86) : KUNPalette.line.opacity(0.44), lineWidth: 0.8)
         )
         .contentShape(RoundedRectangle(cornerRadius: 8))
         .padding(.horizontal, 10)
@@ -1625,11 +1690,11 @@ private struct SettingsDetailSurface<Content: View>: View {
         .padding(22)
         .background(
             RoundedRectangle(cornerRadius: 8)
-                .fill(KUNPalette.surface.opacity(0.84))
+                .fill(KUNPalette.card.opacity(0.90))
         )
         .overlay(
             RoundedRectangle(cornerRadius: 8)
-                .stroke(.white.opacity(0.78), lineWidth: 0.8)
+                .stroke(KUNPalette.stroke.opacity(0.72), lineWidth: 0.8)
         )
         .shadow(color: .black.opacity(0.035), radius: 18, x: 0, y: 10)
     }
@@ -1712,7 +1777,7 @@ private struct TranslationServiceDetail: View {
                     .foregroundStyle(.secondary)
 #else
                 Label("当前 macOS 14 构建不可用", systemImage: "exclamationmark.triangle.fill")
-                    .foregroundStyle(.orange)
+                    .foregroundStyle(KUNPalette.warning)
                 Text("升级到 macOS 15+ 并使用支持 Translation Framework 的 Xcode 构建后可启用。")
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -1773,7 +1838,7 @@ private struct StatusLine: View {
     var body: some View {
         HStack {
             Label(title, systemImage: isOn ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
-                .foregroundStyle(isOn ? .green : .orange)
+                .foregroundStyle(isOn ? KUNPalette.success : KUNPalette.warning)
             Spacer()
             Text(isOn ? "已生效" : "未生效")
                 .foregroundStyle(.secondary)
@@ -1792,7 +1857,7 @@ private extension View {
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 8)
-                    .stroke(.white.opacity(0.76), lineWidth: 0.8)
+                    .stroke(KUNPalette.stroke.opacity(0.68), lineWidth: 0.8)
             )
             .shadow(color: .black.opacity(0.03), radius: 16, x: 0, y: 10)
     }
@@ -1830,11 +1895,11 @@ private struct HeaderActionButtonStyle: ButtonStyle {
             .padding(.vertical, 7)
             .background(
                 RoundedRectangle(cornerRadius: 8)
-                    .fill(configuration.isPressed ? KUNPalette.lemon.opacity(0.62) : .white.opacity(0.72))
+                    .fill(configuration.isPressed ? KUNPalette.controlPressed : KUNPalette.control.opacity(0.78))
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 8)
-                    .stroke(.white.opacity(0.82), lineWidth: 0.8)
+                    .stroke(KUNPalette.stroke.opacity(0.72), lineWidth: 0.8)
             )
     }
 }
@@ -1869,11 +1934,11 @@ private struct HistoryRow: View {
         .padding(12)
         .background(
             RoundedRectangle(cornerRadius: 8)
-                .fill(KUNPalette.surface.opacity(0.74))
+                .fill(KUNPalette.card.opacity(0.76))
         )
         .overlay(
             RoundedRectangle(cornerRadius: 8)
-                .stroke(.white.opacity(0.76), lineWidth: 0.8)
+                .stroke(KUNPalette.stroke.opacity(0.68), lineWidth: 0.8)
         )
     }
 }
@@ -1901,11 +1966,11 @@ private struct NoteRow: View {
         .padding(12)
         .background(
             RoundedRectangle(cornerRadius: 8)
-                .fill(KUNPalette.surface.opacity(0.74))
+                .fill(KUNPalette.card.opacity(0.76))
         )
         .overlay(
             RoundedRectangle(cornerRadius: 8)
-                .stroke(.white.opacity(0.76), lineWidth: 0.8)
+                .stroke(KUNPalette.stroke.opacity(0.68), lineWidth: 0.8)
         )
     }
 }
@@ -1937,7 +2002,7 @@ private struct TextBlock: View {
         )
         .overlay(
             RoundedRectangle(cornerRadius: 8)
-                .stroke(.white.opacity(0.78), lineWidth: 0.8)
+                .stroke(KUNPalette.stroke.opacity(0.70), lineWidth: 0.8)
         )
     }
 }
@@ -1962,7 +2027,7 @@ private struct EmptyStateView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(24)
-        .background(KUNPalette.surface.opacity(0.32))
+        .background(KUNPalette.cardMuted.opacity(0.32))
     }
 }
 
@@ -1989,11 +2054,11 @@ private struct SearchField: View {
         .padding(.vertical, 8)
         .background(
             RoundedRectangle(cornerRadius: 8)
-                .fill(.white.opacity(0.78))
+                .fill(KUNPalette.control.opacity(0.82))
         )
         .overlay(
             RoundedRectangle(cornerRadius: 8)
-                .stroke(.white.opacity(0.82), lineWidth: 0.8)
+                .stroke(KUNPalette.stroke.opacity(0.72), lineWidth: 0.8)
         )
     }
 }
@@ -2023,11 +2088,11 @@ private struct SettingsPanel<Content: View>: View {
         .padding(18)
         .background(
             RoundedRectangle(cornerRadius: 8)
-                .fill(KUNPalette.surface.opacity(0.78))
+                .fill(KUNPalette.card.opacity(0.84))
         )
         .overlay(
             RoundedRectangle(cornerRadius: 8)
-                .stroke(.white.opacity(0.78), lineWidth: 0.8)
+                .stroke(KUNPalette.stroke.opacity(0.72), lineWidth: 0.8)
         )
         .frame(maxWidth: .infinity, alignment: .topLeading)
     }
@@ -2042,7 +2107,7 @@ private struct PermissionStatusRow: View {
     var body: some View {
         HStack {
             Label(isGranted ? "\(title)：已生效" : "\(title)：未生效", systemImage: isGranted ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
-                .foregroundStyle(isGranted ? .green : .orange)
+                .foregroundStyle(isGranted ? KUNPalette.success : KUNPalette.warning)
             Spacer()
             Button(actionTitle, action: action)
         }
