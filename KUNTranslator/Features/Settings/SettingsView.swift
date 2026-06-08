@@ -44,6 +44,11 @@ struct SettingsView: View {
             }
         }
         .frame(minWidth: 1040, minHeight: 680)
+        .preferredColorScheme(preferredColorScheme)
+        .onAppear(perform: applyAppAppearance)
+        .onChange(of: settingsStore.settings.appearance) { _, _ in
+            applyAppAppearance()
+        }
         .task {
             await loadStoredSecrets()
             await loadHistory()
@@ -997,6 +1002,25 @@ struct SettingsView: View {
         ]
     }
 
+    private var preferredColorScheme: ColorScheme? {
+        switch settingsStore.settings.appearance.windowStyleName {
+        case "light": .light
+        case "dark": .dark
+        default: nil
+        }
+    }
+
+    private func applyAppAppearance() {
+        switch settingsStore.settings.appearance.windowStyleName {
+        case "light":
+            NSApp.appearance = NSAppearance(named: .aqua)
+        case "dark":
+            NSApp.appearance = NSAppearance(named: .darkAqua)
+        default:
+            NSApp.appearance = nil
+        }
+    }
+
     private func openHelp() {
         guard let url = URL(string: "https://github.com/duangjaiignacy-blip/kunkun") else { return }
         NSWorkspace.shared.open(url)
@@ -1154,18 +1178,67 @@ private enum SoftServiceTone {
 }
 
 private enum KUNPalette {
-    static let canvas = Color(red: 0.965, green: 0.958, blue: 0.936)
-    static let sidebar = Color(red: 0.925, green: 0.925, blue: 0.905)
-    static let surface = Color(red: 1.0, green: 0.992, blue: 0.968)
-    static let ink = Color(red: 0.045, green: 0.043, blue: 0.055)
-    static let line = Color(red: 0.80, green: 0.79, blue: 0.74)
-    static let mint = Color(red: 0.78, green: 0.90, blue: 0.88)
-    static let sky = Color(red: 0.79, green: 0.89, blue: 0.92)
-    static let peach = Color(red: 0.98, green: 0.86, blue: 0.76)
-    static let lemon = Color(red: 0.94, green: 0.96, blue: 0.74)
+    static var canvas: Color {
+        adaptive(light: NSColor(red: 0.965, green: 0.958, blue: 0.936, alpha: 1),
+                 dark: NSColor(red: 0.072, green: 0.076, blue: 0.086, alpha: 1))
+    }
+
+    static var sidebar: Color {
+        adaptive(light: NSColor(red: 0.925, green: 0.925, blue: 0.905, alpha: 1),
+                 dark: NSColor(red: 0.105, green: 0.110, blue: 0.122, alpha: 1))
+    }
+
+    static var surface: Color {
+        adaptive(light: NSColor(red: 1.0, green: 0.992, blue: 0.968, alpha: 1),
+                 dark: NSColor(red: 0.145, green: 0.151, blue: 0.166, alpha: 1))
+    }
+
+    static var ink: Color {
+        adaptive(light: NSColor(red: 0.045, green: 0.043, blue: 0.055, alpha: 1),
+                 dark: NSColor(red: 0.952, green: 0.945, blue: 0.918, alpha: 1))
+    }
+
+    static var line: Color {
+        adaptive(light: NSColor(red: 0.80, green: 0.79, blue: 0.74, alpha: 1),
+                 dark: NSColor(red: 0.28, green: 0.30, blue: 0.33, alpha: 1))
+    }
+
+    static var mint: Color {
+        adaptive(light: NSColor(red: 0.78, green: 0.90, blue: 0.88, alpha: 1),
+                 dark: NSColor(red: 0.24, green: 0.47, blue: 0.43, alpha: 1))
+    }
+
+    static var sky: Color {
+        adaptive(light: NSColor(red: 0.79, green: 0.89, blue: 0.92, alpha: 1),
+                 dark: NSColor(red: 0.24, green: 0.40, blue: 0.50, alpha: 1))
+    }
+
+    static var peach: Color {
+        adaptive(light: NSColor(red: 0.98, green: 0.86, blue: 0.76, alpha: 1),
+                 dark: NSColor(red: 0.55, green: 0.32, blue: 0.24, alpha: 1))
+    }
+
+    static var lemon: Color {
+        adaptive(light: NSColor(red: 0.94, green: 0.96, blue: 0.74, alpha: 1),
+                 dark: NSColor(red: 0.43, green: 0.45, blue: 0.25, alpha: 1))
+    }
+
+    private static func adaptive(light: NSColor, dark: NSColor) -> Color {
+        Color(nsColor: NSColor(name: nil) { appearance in
+            appearance.isDarkMode ? dark : light
+        })
+    }
+}
+
+private extension NSAppearance {
+    var isDarkMode: Bool {
+        bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
+    }
 }
 
 private struct HomeHeroHeader: View {
+    @Environment(\.colorScheme) private var colorScheme
+
     let historyCount: Int
     let noteCount: Int
     let engine: String
@@ -1207,7 +1280,8 @@ private struct HomeHeroHeader: View {
                         .resizable()
                         .scaledToFit()
                         .frame(width: 176, height: 176)
-                        .opacity(0.92)
+                        .opacity(colorScheme == .dark ? 0.74 : 0.92)
+                        .blendMode(colorScheme == .dark ? .multiply : .normal)
                     Circle()
                         .fill(.white.opacity(0.74))
                         .frame(width: 64, height: 64)
@@ -1318,6 +1392,8 @@ private struct HeroActionTile: View {
 }
 
 private struct AppBackdrop: View {
+    @Environment(\.colorScheme) private var colorScheme
+
     var body: some View {
         ZStack(alignment: .topTrailing) {
             KUNPalette.canvas
@@ -1336,7 +1412,8 @@ private struct AppBackdrop: View {
                 .resizable()
                 .scaledToFit()
                 .frame(width: 430, height: 430)
-                .opacity(0.16)
+                .opacity(colorScheme == .dark ? 0.10 : 0.16)
+                .blendMode(colorScheme == .dark ? .multiply : .normal)
                 .blur(radius: 1.5)
                 .padding(.top, 36)
                 .padding(.trailing, 40)

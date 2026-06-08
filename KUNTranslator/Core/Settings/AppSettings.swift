@@ -48,6 +48,14 @@ enum AppAppearance: String, Codable, CaseIterable, Identifiable, Sendable {
         case .dark: "深色"
         }
     }
+
+    var windowStyleName: String? {
+        switch self {
+        case .system: nil
+        case .light: "light"
+        case .dark: "dark"
+        }
+    }
 }
 
 struct HotkeySettings: Codable, Equatable, Sendable {

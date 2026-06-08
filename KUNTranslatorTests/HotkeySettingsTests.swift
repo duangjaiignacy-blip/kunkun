@@ -26,4 +26,10 @@ final class HotkeySettingsTests: XCTestCase {
         let decoded = try JSONDecoder().decode(AppSettings.self, from: data)
         XCTAssertEqual(decoded, .default)
     }
+
+    func testAppearanceMapsToWindowStyle() {
+        XCTAssertNil(AppAppearance.system.windowStyleName)
+        XCTAssertEqual(AppAppearance.light.windowStyleName, "light")
+        XCTAssertEqual(AppAppearance.dark.windowStyleName, "dark")
+    }
 }
